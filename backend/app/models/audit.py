@@ -11,8 +11,8 @@ from app.models.mixins import CreatedAtMixin, UUIDPrimaryKeyMixin
 class AudtLog(UUIDPrimaryKeyMixin, CeatedAtMixin, Base):
     __tablename__ = "audit_logs"
     __table__args__ = (
-            Index("ix_audit_logs_entity". "entity_type", "entity_id"),
-            Index("ix_sudit_logs_created_at", "created_at),
+            Index("ix_audit_logs_entity", "entity_type", "entity_id"),
+            Index("ix_sudit_logs_created_at", "created_at"),
     )
 
     actor_id: Mapped[uuid.UUID | None] = mapped_column(
