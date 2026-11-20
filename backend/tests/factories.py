@@ -43,8 +43,8 @@ def make_user(db: Session, *roles: str, **overrides) -> User:
     user = User(
         full_name=overrides.pop("full_name", f"Test User {n}"),
         phone_number=overrides.pop("phone_number", f"+2547000{n:05d}"),
-        email=overrides.pop("email", f"user{n}@example.test"),
-        password_hash=TEST_PASSWORD_HASH,
+        email=overrides.pop("email", f"user{n}@example.com"),
+        password_hash=overrides.pop("password_hash", TEST_PASSWORD_HASH),
         **overrides,
     )
     if "REPORTER" in roles:
