@@ -69,6 +69,8 @@ class ClinicImportBatch(UUIDPrimaryKeyMixin, CreatedAtMixin, Base):
     row_count: Mapped[int] = mapped_column(Integer, nullable=False)
     # Validation errors for rejected files: [{"row": 3, "field": "...", "message": "..."}]
     errors: Mapped[list | None] = mapped_column(JSONB)
+    # Counts for accepted files: rows inserted/updated, facilities created/updated
+    summary: Mapped[dict | None] = mapped_column(JSONB)
 
     summaries: Mapped[list["ClinicVisitSummary"]] = relationship(back_populates="import_batch")
 

@@ -11,7 +11,7 @@ import uuid
 from datetime import datetime
 from decimal import Decimal
 
-from sqlalchemy import CheckConstraint, DateTime, ForeignKey, Numeric, String, Text, text
+from sqlalchemy import CheckConstraint, DateTime, ForeignKey, Integer, Numeric, String, Text, text
 from sqlalchemy.dialects.postgresql import UUID
 from sqlalchemy.orm import Mapped, mapped_column
 
@@ -29,6 +29,7 @@ class Payout(UUIDPrimaryKeyMixin, TimestampMixin, Base):
             "status <> 'SUCCESS' OR (transaction_ref IS NOT NULL AND paid_at IS NOT NULL)",
             name="success_requires_reference",
         ),
+        CheckConstraint("attempts >= 0", name="attempts_non_negative"),
     )
 
     report_id: Mapped[uuid.UUID] = mapped_column(
@@ -70,3 +71,8 @@ class Payout(UUIDPrimaryKeyMixin, TimestampMixin, Base):
     )
     failure_reason: Mapped[str | None] = mapped_column(Text)
     paid_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True))
+    # How many times a payment request was sent to the provider (Sprint 4)
+    attempts: Mapped[int] = mapped_column(
+        Integer, nullable=False, default=0, server_default=text("0")
+    )
+    last_attempt_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True))

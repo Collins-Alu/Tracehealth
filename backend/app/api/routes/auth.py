@@ -17,6 +17,7 @@ from app.models import User
 from app.schemas.auth import (
     LoginRequest,
     LogoutRequest,
+    MeUpdate,
     RefreshRequest,
     RegisterRequest,
     TokenResponse,
@@ -77,3 +78,13 @@ def logout(
 @router.get("/me", response_model=UserOut, summary="The logged-in user and their roles")
 def me(user: User = Depends(get_current_user)) -> UserOut:
     return auth_service.user_to_out(user)
+
+
+@router.patch("/me", response_model=UserOut, summary="Update my language, name or payout details")
+def update_me(
+    data: MeUpdate, user: User = Depends(get_current_user), db: Session = Depends(get_db)
+) -> UserOut:
+    try:
+        return auth_service.update_me(db, user, data)
+    except AuthError as exc:
+        _raise(exc)

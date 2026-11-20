@@ -18,7 +18,12 @@ PyJWT==2.15.1
 python-multipart==0.0.33
 pillow==13.0.0
 
-# --- Testing & code quality ---
-pytest==8.3.4
+# --- Photo storage in S3-compatible object storage (optional, deployment) ---
+boto3==1.44.6
+
+# --- Outgoing HTTP: Expo push, Africa's Talking SMS, M-Pesa (also used by the tests) ---
 httpx==0.28.1
+
+# --- Testing & code quality (left out of the production image) ---
+pytest==8.3.4
 ruff==0.8.4

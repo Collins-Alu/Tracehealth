@@ -102,3 +102,28 @@ class TokenResponse(BaseModel):
     token_type: str = "bearer"
     expires_in: int = Field(description="Access token lifetime in seconds")
     user: UserOut
+
+
+class MeUpdate(BaseModel):
+    """What people can change about their own account from the app."""
+
+    full_name: str | None = Field(None, min_length=2, max_length=120)
+    preferred_language: Language | None = None
+    # Reporters only (D4): agree to receive rewards by mobile money, and where
+    payout_consent: bool | None = None
+    payout_phone: str | None = Field(None, max_length=25)
+
+    @field_validator("full_name")
+    @classmethod
+    def _strip_name(cls, v: str | None) -> str | None:
+        return " ".join(v.split()) if v else None
+
+    @field_validator("payout_phone")
+    @classmethod
+    def _phone(cls, v: str | None) -> str | None:
+        if v is None:
+            return None
+        try:
+            return normalize_phone(v)
+        except InvalidPhoneNumber as exc:
+            raise ValueError(str(exc)) from None

@@ -17,7 +17,7 @@ from app.core import security
 from app.core.deps import load_user_with_roles
 from app.core.phone import InvalidPhoneNumber, normalize_phone
 from app.models import RefreshToken, Reporter, User
-from app.schemas.auth import RegisterRequest, TokenResponse, UserOut
+from app.schemas.auth import MeUpdate, RegisterRequest, TokenResponse, UserOut
 from app.services import audit_service
 
 
@@ -194,3 +194,42 @@ def logout(db: Session, user: User, refresh_token: str) -> None:
             db, actor_id=user.id, action="auth.logout", entity_type="user", entity_id=user.id
         )
     db.commit()
+
+
+def update_me(db: Session, user: User, data: MeUpdate) -> UserOut:
+    changes: dict = {}
+    if data.full_name and data.full_name != user.full_name:
+        user.full_name = data.full_name
+        changes["full_name"] = True
+    if data.preferred_language and data.preferred_language != user.preferred_language:
+        user.preferred_language = data.preferred_language
+        changes["preferred_language"] = data.preferred_language.value
+    if data.payout_consent is not None or data.payout_phone is not None:
+        profile = user.reporter_profile
+        if profile is None:
+            raise AuthError("Only reporters receive rewards.", 403)
+        if data.payout_consent is False:
+            profile.payout_phone = None
+            profile.payout_consent_at = None
+            changes["payout_consent"] = False
+        else:
+            phone = data.payout_phone or profile.payout_phone or user.phone_number
+            if data.payout_consent or profile.payout_consent_at is not None:
+                profile.payout_phone = phone
+                profile.payout_consent_at = profile.payout_consent_at or datetime.now(UTC)
+                changes["payout_consent"] = True
+                changes["payout_phone_changed"] = data.payout_phone is not None
+            else:
+                raise AuthError("Agree to mobile money payouts before adding a number.", 422)
+    if changes:
+        audit_service.record(
+            db,
+            actor_id=user.id,
+            action="user.self_updated",
+            entity_type="user",
+            entity_id=user.id,
+            details=changes,
+        )
+    db.commit()
+    db.refresh(user)
+    return user_to_out(user)
