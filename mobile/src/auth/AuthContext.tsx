@@ -9,7 +9,7 @@ import React, { createContext, useCallback, useContext, useEffect, useState } fr
 
 import { authApi } from '@/api/auth';
 import { onSessionExpired } from '@/api/index';
-import type { RegisterInput, User } from '@/api/types';
+import type { MeUpdate, RegisterInput, User } from '@/api/types';
 import { unregisterFromPush } from '@/notifications/push';
 
 import { tokenStore } from './tokenStore';
@@ -22,6 +22,8 @@ interface AuthContextValue {
   login(identifier: string, password: string): Promise<void>;
   register(input: RegisterInput): Promise<void>;
   logout(): Promise<void>;
+  /** Change my own account (language, payout consent and number). Needs a connection. */
+  updateProfile(changes: MeUpdate): Promise<User>;
 }
 
 const AuthContext = createContext<AuthContextValue | null>(null);
@@ -76,8 +78,14 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     await tokenStore.clear();
   }, []);
 
+  const updateProfile = useCallback(async (changes: MeUpdate) => {
+    const fresh = await authApi.updateMe(changes);
+    await tokenStore.saveUser(fresh);
+    return fresh;
+  }, []);
+
   return (
-    <AuthContext.Provider value={{ status, user, login, register, logout }}>
+    <AuthContext.Provider value={{ status, user, login, register, logout, updateProfile }}>
       {children}
     </AuthContext.Provider>
   );

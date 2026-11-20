@@ -22,6 +22,7 @@ from sqlalchemy import (
     ForeignKey,
     Integer,
     Numeric,
+    String,
     UniqueConstraint,
     func,
 )
@@ -75,6 +76,11 @@ class HealthLinkage(UUIDPrimaryKeyMixin, Base):
     distance_km: Mapped[float] = mapped_column(Double, nullable=False)
     baseline_visits: Mapped[int | None] = mapped_column(Integer)
     followup_visits: Mapped[int | None] = mapped_column(Integer)
+    # Days of clinic data found in each window (coverage)
+    baseline_days: Mapped[int | None] = mapped_column(Integer)
+    followup_days: Mapped[int | None] = mapped_column(Integer)
+    # Why the status is INSUFFICIENT_DATA, e.g. "followup_coverage"
+    insufficient_reason: Mapped[str | None] = mapped_column(String(60))
     rate_ratio: Mapped[float | None] = mapped_column(Double)
     p_value: Mapped[float | None] = mapped_column(Double)
     # Spearman rank correlation of weekly report counts vs weekly visit counts

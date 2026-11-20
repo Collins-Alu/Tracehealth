@@ -10,20 +10,19 @@ Every uploaded photo is:
      GPS position, model, owner name and timestamps. The report's location is
      stored separately on purpose, and only after the reporter confirmed it.
 
-Files are stored under UPLOAD_DIR with a random name. They are never served
-directly from a public folder; the API checks permissions on every download.
-A cloud (S3-compatible) backend will implement the same functions for
-deployment.
+Files are stored with a random name by the configured backend (app/storage:
+local disk or S3-compatible object storage). They are never served from a
+public folder; the API checks permissions on every download.
 """
 
 import io
 import uuid
 from datetime import UTC, datetime
-from pathlib import Path
 
 from PIL import Image, ImageOps, UnidentifiedImageError
 
 from app.core.config import get_settings
+from app.storage import get_storage
 
 ALLOWED_FORMATS = {"JPEG", "PNG", "WEBP"}
 # Refuse "decompression bombs": tiny files that expand to gigantic images
@@ -59,30 +58,19 @@ def process_photo(raw: bytes) -> bytes:
 
 
 def save_photo(jpeg_bytes: bytes) -> str:
-    """Store the processed photo and return its storage key (a relative path)."""
+    """Store the processed photo and return its storage key."""
     now = datetime.now(UTC)
     key = f"reports/{now:%Y}/{now:%m}/{uuid.uuid4().hex}.jpg"
-    path = _path_for(key)
-    path.parent.mkdir(parents=True, exist_ok=True)
-    path.write_bytes(jpeg_bytes)
+    get_storage().save(key, jpeg_bytes)
     return key
+
+
+def read_photo(key: str) -> bytes | None:
+    return get_storage().read(key)
 
 
 def delete_photo(key: str) -> None:
     try:
-        _path_for(key).unlink(missing_ok=True)
-    except ValueError:
-        pass
-
-
-def open_photo_path(key: str) -> Path | None:
-    path = _path_for(key)
-    return path if path.is_file() else None
-
-
-def _path_for(key: str) -> Path:
-    root = get_settings().UPLOAD_DIR.resolve()
-    path = (root / key).resolve()
-    if root not in path.parents:  # blocks "../../etc/passwd" style keys
-        raise ValueError("invalid storage key")
-    return path
+        get_storage().delete(key)
+    except Exception:
+        pass  # a leftover file is harmless; never fail a request because of it

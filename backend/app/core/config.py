@@ -34,11 +34,15 @@ class Settings(BaseSettings):
 
     DATABASE_URL: str
     TEST_DATABASE_URL: str | None = None
-    DB_POOL_SIZE: int = 10
-    DB_MAX_OVERFLOW: int = 20
+    # Per API worker process. Keep workers x (pool + overflow) below the
+    # database's max_connections (PostgreSQL default 100), leaving room for
+    # migrations and admin tools: 4 workers x 15 = 60.
+    DB_POOL_SIZE: int = 5
+    DB_MAX_OVERFLOW: int = 10
+    DB_POOL_TIMEOUT_SECONDS: int = 10
 
     # Comma-separated list of browser origins allowed to call the API
-    CORS_ORIGINS: str = "http://localhost:5173"
+    CORS_ORIGINS: str = "http://localhost:5173,http://localhost:4173"
 
     # Only used by scripts/seed.py in development
     SEED_DEFAULT_PASSWORD: str = "ChangeMe123!"
@@ -82,6 +86,38 @@ class Settings(BaseSettings):
     # Sprint 2 records a PENDING payout when a report is verified; Sprint 4
     # adds the adapter that actually sends it. MOCK = no real money.
     PAYOUT_PROVIDER: Literal["MOCK", "MPESA_DARAJA"] = "MOCK"
+    # Give up on automatic retries after this many attempts
+    PAYOUT_MAX_ATTEMPTS: int = 5
+    # An accepted M-Pesa request with no result after this long is marked FAILED
+    PAYOUT_RESULT_TIMEOUT_HOURS: int = 24
+
+    # --- M-Pesa Daraja B2C (Sprint 4; see .env.example) -----------------
+    MPESA_ENVIRONMENT: Literal["sandbox", "production"] = "sandbox"
+    MPESA_CONSUMER_KEY: str | None = None
+    MPESA_CONSUMER_SECRET: str | None = None
+    MPESA_SHORTCODE: str | None = None
+    MPESA_INITIATOR_NAME: str | None = None
+    MPESA_SECURITY_CREDENTIAL: str | None = None
+    # Public HTTPS address of this API, used for M-Pesa result callbacks
+    MPESA_CALLBACK_BASE_URL: str | None = None
+    # Long random secret included in the callback path, so only M-Pesa
+    # (who was given the URL) can post results
+    MPESA_CALLBACK_TOKEN: str | None = None
+    MPESA_B2C_PATH: str = "/mpesa/b2c/v1/paymentrequest"
+
+    # --- Background jobs (Sprint 4) ---------------------------------------
+    # Every JOBS_INTERVAL_SECONDS: send pending payouts, expire stale M-Pesa
+    # requests, retry undelivered notifications. Off in tests.
+    BACKGROUND_JOBS_ENABLED: bool = True
+    JOBS_INTERVAL_SECONDS: int = 60
+
+    # --- Photo storage (D6) ---------------------------------------------
+    STORAGE_BACKEND: Literal["local", "s3"] = "local"
+    S3_BUCKET: str | None = None
+    S3_ENDPOINT_URL: str | None = None  # e.g. Cloudflare R2 or MinIO; empty for AWS
+    S3_REGION: str | None = None
+    S3_ACCESS_KEY_ID: str | None = None
+    S3_SECRET_ACCESS_KEY: str | None = None
 
     @property
     def cors_origin_list(self) -> list[str]:

@@ -20,6 +20,7 @@ from datetime import datetime
 from fastapi import APIRouter, BackgroundTasks, Depends, HTTPException, Query
 from sqlalchemy.orm import Session
 
+from app.core.background import PayoutProcessor, get_payout_processor
 from app.core.deps import Role, get_current_user, require_roles
 from app.core.notifications import get_notification_dispatcher
 from app.db.session import get_db
@@ -34,7 +35,7 @@ from app.schemas.report import (
     VerifyRequest,
     ZoneOut,
 )
-from app.services import report_service, verification_service, zone_service
+from app.services import linkage_engine, report_service, verification_service, zone_service
 from app.services.notification_dispatch import NotificationDispatcher
 from app.services.verification_service import VerificationError
 
@@ -137,12 +138,19 @@ def _decide(
     reason: str | None,
     background: BackgroundTasks,
     dispatcher: NotificationDispatcher,
+    processor: PayoutProcessor,
 ) -> DecisionResult:
     try:
         outcome = verification_service.decide(db, user, report_id, decision, reason)
     except VerificationError as exc:
         _raise(exc)
     background.add_task(dispatcher.dispatch, outcome.delivery_ids)
+    if outcome.payout is not None:
+        # UML B.4 step 7: send the reward straight after the response
+        background.add_task(processor.process, [outcome.payout.id])
+    if decision == VerificationDecision.VERIFIED:
+        # UML B.6 step 7b: link the newly verified report to nearby clinic data
+        linkage_engine.compute_safely(db, [report_id])
     return DecisionResult(
         report=report_service.report_out(db, user, outcome.report),
         verification=VerificationOut.model_validate(outcome.verification),
@@ -161,9 +169,12 @@ def verify_report(
     user: User = Depends(verifier_only),
     db: Session = Depends(get_db),
     dispatcher: NotificationDispatcher = Depends(get_notification_dispatcher),
+    processor: PayoutProcessor = Depends(get_payout_processor),
 ) -> DecisionResult:
     note = body.note if body else None
-    return _decide(db, user, report_id, VerificationDecision.VERIFIED, note, background, dispatcher)
+    return _decide(
+        db, user, report_id, VerificationDecision.VERIFIED, note, background, dispatcher, processor
+    )
 
 
 @router.post(
@@ -176,9 +187,17 @@ def reject_report(
     user: User = Depends(verifier_only),
     db: Session = Depends(get_db),
     dispatcher: NotificationDispatcher = Depends(get_notification_dispatcher),
+    processor: PayoutProcessor = Depends(get_payout_processor),
 ) -> DecisionResult:
     return _decide(
-        db, user, report_id, VerificationDecision.REJECTED, body.reason, background, dispatcher
+        db,
+        user,
+        report_id,
+        VerificationDecision.REJECTED,
+        body.reason,
+        background,
+        dispatcher,
+        processor,
     )
 
 
@@ -194,7 +213,15 @@ def flag_report(
     user: User = Depends(verifier_only),
     db: Session = Depends(get_db),
     dispatcher: NotificationDispatcher = Depends(get_notification_dispatcher),
+    processor: PayoutProcessor = Depends(get_payout_processor),
 ) -> DecisionResult:
     return _decide(
-        db, user, report_id, VerificationDecision.FLAGGED, body.reason, background, dispatcher
+        db,
+        user,
+        report_id,
+        VerificationDecision.FLAGGED,
+        body.reason,
+        background,
+        dispatcher,
+        processor,
     )

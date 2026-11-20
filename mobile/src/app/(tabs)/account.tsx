@@ -8,6 +8,8 @@ import { verificationApi } from '@/api/verification';
 import { useAuth } from '@/auth/AuthContext';
 import { Button } from '@/components/Button';
 import { LanguageToggle } from '@/components/LanguageToggle';
+import { Message } from '@/components/Message';
+import { PayoutSettings } from '@/components/PayoutSettings';
 import { Screen } from '@/components/Screen';
 import { currentPushSupport } from '@/notifications/push';
 import { useSync } from '@/offline/SyncContext';
@@ -28,6 +30,7 @@ export default function Account() {
   const { queue } = useSync();
   const [zoneName, setZoneName] = useState<string | null>(null);
   const push = currentPushSupport();
+  const [languageNote, setLanguageNote] = useState<string | null>(null);
 
   useEffect(() => {
     const code = user?.assigned_zone;
@@ -66,8 +69,10 @@ export default function Account() {
           value={push.supported ? t('account.pushOn') : t('account.pushInboxOnly')}
         />
       </View>
+      <PayoutSettings />
       <Text style={styles.section}>{t('common.language')}</Text>
-      <LanguageToggle />
+      <LanguageToggle onSaveFailed={() => setLanguageNote(t('account.languageSaveFailed'))} />
+      <Message text={languageNote} tone="info" />
       <Button title={t('common.logout')} icon="log-out" variant="secondary" onPress={confirmLogout} />
     </Screen>
   );

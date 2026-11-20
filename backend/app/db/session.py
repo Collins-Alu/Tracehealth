@@ -20,6 +20,7 @@ engine = create_engine(
     settings.DATABASE_URL,
     pool_size=settings.DB_POOL_SIZE,
     max_overflow=settings.DB_MAX_OVERFLOW,
+    pool_timeout=settings.DB_POOL_TIMEOUT_SECONDS,  # wait for a free connection, then 503
     pool_pre_ping=True,  # transparently replaces connections the server dropped
 )
 

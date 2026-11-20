@@ -21,7 +21,7 @@ Who is told what:
 
 import uuid
 from dataclasses import dataclass, field
-from datetime import UTC, datetime
+from datetime import UTC, datetime, timedelta
 
 from sqlalchemy import exists, or_, select
 from sqlalchemy.orm import Session
@@ -30,7 +30,13 @@ from app.models import DevicePushToken, Notification, Payout, PollutionReport, U
 from app.models.enums import Language, NotificationChannel, NotificationStatus
 
 # Event types the dispatcher may fall back to SMS for (reporter-facing only)
-SMS_FALLBACK_TYPES = {"report.verified", "report.rejected", "report.flagged"}
+SMS_FALLBACK_TYPES = {
+    "report.verified",
+    "report.rejected",
+    "report.flagged",
+    "payout.sent",
+    "payout.failed",
+}
 
 CATEGORY_NAMES = {
     Language.EN: {
@@ -86,6 +92,35 @@ TEMPLATES = {
             "Tutakujulisha matokeo.",
         ),
     },
+}
+
+TEMPLATES["payout.sent"] = {
+    Language.EN: (
+        "Reward sent",
+        "Your reward of {currency} {amount} for your {category} report has been sent. "
+        "Reference: {ref}.{test}",
+    ),
+    Language.SW: (
+        "Zawadi imetumwa",
+        "Zawadi yako ya {currency} {amount} kwa ripoti yako ya {category} imetumwa. "
+        "Kumbukumbu: {ref}.{test}",
+    ),
+}
+TEMPLATES["payout.failed"] = {
+    Language.EN: (
+        "Reward not sent yet",
+        "We could not send your reward of {currency} {amount} for your {category} report. "
+        "Our team will check and try again.",
+    ),
+    Language.SW: (
+        "Zawadi bado haijatumwa",
+        "Hatukuweza kutuma zawadi yako ya {currency} {amount} kwa ripoti yako ya {category}. "
+        "Timu yetu itaangalia na kujaribu tena.",
+    ),
+}
+TEST_PAYMENT_TEXT = {
+    Language.EN: " (TEST payment: no real money was sent.)",
+    Language.SW: " (Malipo ya MAJARIBIO: hakuna pesa halisi zilizotumwa.)",
 }
 
 REWARD_TEXT = {
@@ -216,6 +251,42 @@ def notify_reporter_of_decision(
         reward=reward,
     )
     return result
+
+
+def notify_reporter_of_payout(db: Session, payout: Payout, event: str) -> NotifyResult:
+    report = db.get(PollutionReport, payout.report_id)
+    language = db.scalar(select(User.preferred_language).where(User.id == payout.reporter_id))
+    is_test = payout.provider.value == "MOCK"
+    result = NotifyResult()
+    _create(
+        db,
+        user=(payout.reporter_id, language),
+        event=event,
+        report=report,
+        allow_sms=True,
+        result=result,
+        currency=payout.currency,
+        amount=f"{payout.amount:.0f}",
+        ref=payout.transaction_ref or "",
+        test=TEST_PAYMENT_TEXT[language] if is_test else "",
+    )
+    return result
+
+
+def pending_delivery_ids(db: Session, older_than_minutes: int = 2) -> list[uuid.UUID]:
+    """Push/SMS deliveries still PENDING (e.g. the server stopped before sending)."""
+    cutoff = datetime.now(UTC) - timedelta(minutes=older_than_minutes)
+    return list(
+        db.scalars(
+            select(Notification.id)
+            .where(
+                Notification.status == NotificationStatus.PENDING,
+                Notification.channel != NotificationChannel.IN_APP,
+                Notification.created_at < cutoff,
+            )
+            .limit(200)
+        )
+    )
 
 
 # --------------------------------------------------------------------------

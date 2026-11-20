@@ -1,5 +1,5 @@
 import { api } from './index';
-import type { RegisterInput, TokenResponse, User } from './types';
+import type { MeUpdate, RegisterInput, TokenResponse, User } from './types';
 
 export const authApi = {
   login: (identifier: string, password: string) =>
@@ -13,6 +13,9 @@ export const authApi = {
     api.request<TokenResponse>('/auth/register', { method: 'POST', json: input, auth: false }),
 
   me: () => api.request<User>('/auth/me'),
+
+  updateMe: (changes: MeUpdate) =>
+    api.request<User>('/auth/me', { method: 'PATCH', json: changes }),
 
   logout: (refreshToken: string) =>
     api.request<void>('/auth/logout', { method: 'POST', json: { refresh_token: refreshToken } }),

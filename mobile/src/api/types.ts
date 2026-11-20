@@ -32,6 +32,15 @@ export interface User {
   payout_phone: string | null;
 }
 
+/** Fields people can change about their own account (PATCH /auth/me). */
+export interface MeUpdate {
+  full_name?: string;
+  preferred_language?: 'EN' | 'SW';
+  /** Reporters only: agree (true) or withdraw (false) mobile money rewards */
+  payout_consent?: boolean;
+  payout_phone?: string;
+}
+
 export interface TokenResponse {
   access_token: string;
   refresh_token: string;

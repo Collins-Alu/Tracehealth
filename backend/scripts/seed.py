@@ -11,8 +11,8 @@ Usage (from the backend/ folder, with the virtual environment active):
     python -m scripts.seed            # seed an empty database
     python -m scripts.seed --reset    # wipe app data first, then seed
 
-Health linkages are NOT seeded: they are computed by the linkage engine
-(Sprint 3) from the reports and clinic counts below.
+Health linkages are NOT seeded: the linkage engine computes them from the
+reports and clinic counts below, exactly as it does for real data.
 """
 
 import argparse
@@ -57,9 +57,9 @@ from app.models.enums import (
     SyncStatus,
     VerificationDecision,
 )
-from app.services import photo_storage
+from app.services import linkage_engine, photo_storage, setting_service
 
-# Tables wiped by --reset (system_settings and alembic_version are kept)
+# Tables wiped by --reset (settings are restored to defaults afterwards)
 APP_TABLES = [
     "health_linkage_evidence",
     "health_linkages",
@@ -354,7 +354,11 @@ def seed(db: Session) -> dict:
     )
     db.flush()
 
+    # Health linkages are computed by the engine from the data above (never seeded)
+    run = linkage_engine.compute(db)
+
     return {
+        "linkages": run.by_status,
         "users": db.scalar(select(func.count()).select_from(User)),
         "reports": len(reports),
         "facilities": len(facilities),
@@ -376,6 +380,9 @@ def main() -> int:
     with SessionLocal() as db:
         if args.reset:
             db.execute(text(f"TRUNCATE {', '.join(APP_TABLES)} RESTART IDENTITY CASCADE"))
+            # CASCADE also empties system_settings (it references users via
+            # updated_by), so put the approved defaults back
+            setting_service.ensure_defaults(db)
         elif db.scalar(select(func.count()).select_from(User)):
             print("Database already has users. Run with --reset to wipe and re-seed.")
             return 1

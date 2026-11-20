@@ -1,0 +1,2 @@
+facility_code,facility_name,area_code,latitude,longitude,condition_category,period_start,period_end,visit_count,patient_name
+E2E-01,E2E Clinic (SYNTHETIC),EMB,-1.2560,36.8990,RESPIRATORY,2026-09-07,2026-09-13,12,Jane Doe

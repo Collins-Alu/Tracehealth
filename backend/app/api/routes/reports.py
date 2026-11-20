@@ -27,7 +27,6 @@ from fastapi import (
     UploadFile,
 )
 from fastapi.exceptions import RequestValidationError
-from fastapi.responses import FileResponse
 from pydantic import ValidationError
 from sqlalchemy.orm import Session
 
@@ -208,7 +207,7 @@ def get_report(
 
 @router.get(
     "/{report_id}/photo",
-    response_class=FileResponse,
+    response_class=Response,
     summary="Report photo (JPEG)",
     responses={200: {"content": {"image/jpeg": {}}}},
 )
@@ -216,15 +215,15 @@ def get_report_photo(
     report_id: uuid.UUID,
     user: User = Depends(get_current_user),
     db: Session = Depends(get_db),
-) -> FileResponse:
+) -> Response:
     try:
         report = report_service.get_visible_report(db, user, report_id)
     except ReportError as exc:
         raise HTTPException(exc.status_code, exc.message) from None
-    path = photo_storage.open_photo_path(report.photo_url)
-    if path is None:
+    data = photo_storage.read_photo(report.photo_url)
+    if data is None:
         raise HTTPException(404, "The photo for this report is not available.")
-    # private: browsers may cache it, shared proxies may not
-    return FileResponse(
-        path, media_type="image/jpeg", headers={"Cache-Control": "private, max-age=86400"}
+    # private: the phone/browser may cache it, shared proxies may not
+    return Response(
+        data, media_type="image/jpeg", headers={"Cache-Control": "private, max-age=86400"}
     )
