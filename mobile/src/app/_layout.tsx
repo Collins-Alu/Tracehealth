@@ -11,6 +11,7 @@ import { useTranslation } from 'react-i18next';
 import { SafeAreaProvider } from 'react-native-safe-area-context';
 
 import { AuthProvider } from '@/auth/AuthContext';
+import { API_URL } from '@/config';
 import '@/i18n';
 import { restoreLanguage } from '@/i18n';
 import { InboxProvider } from '@/notifications/InboxContext';
@@ -21,6 +22,9 @@ export default function RootLayout() {
   const [languageReady, setLanguageReady] = useState(false);
   useEffect(() => {
     restoreLanguage().finally(() => setLanguageReady(true));
+    // Wake the server early: free hosting sleeps when idle and takes up to a
+    // minute to start. Ignored if offline; nothing depends on the answer.
+    fetch(`${API_URL}/health`).catch(() => undefined);
   }, []);
   if (!languageReady) return null;
 
