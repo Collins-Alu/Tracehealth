@@ -100,22 +100,18 @@ def seed(db: Session) -> dict:
     now = datetime.now(UTC)
 
     # ---- People ---------------------------------------------------------
-    admin = create_user(db, "Asha Admin", "+254700000001", "admin@tracehealth.test", pw)
+    admin = create_user(db, "Asha Admin", "+254700000001", "admin@example.org", pw)
     admin.administrator_profile = Administrator(admin_level=3)
 
-    staff = create_user(db, "Brian Agency", "+254700000002", "agency@tracehealth.test", pw)
+    staff = create_user(db, "Brian Agency", "+254700000002", "agency@example.org", pw)
     staff.agency_staff_profile = AgencyStaff(
         agency_name="Nairobi County Environment (SYNTHETIC)", department="Public Health"
     )
 
-    verifier_a = create_user(
-        db, "Carol Verifier", "+254700000003", "verifier1@tracehealth.test", pw
-    )
+    verifier_a = create_user(db, "Carol Verifier", "+254700000003", "verifier1@example.org", pw)
     verifier_a.verifier_profile = Verifier(assigned_zone="NBI-DANDORA")
     # A community member who both reports and verifies (tests the self-verification rule)
-    verifier_b = create_user(
-        db, "Daniel Verifier", "+254700000004", "verifier2@tracehealth.test", pw
-    )
+    verifier_b = create_user(db, "Daniel Verifier", "+254700000004", "verifier2@example.org", pw)
     verifier_b.verifier_profile = Verifier(assigned_zone="NBI-MUKURU")
     verifier_b.reporter_profile = Reporter()
 
@@ -341,10 +337,10 @@ def main() -> int:
     for key, value in counts.items():
         print(f"  {key:12} {value}")
     print(f"\nDev logins (password: {settings.SEED_DEFAULT_PASSWORD}):")
-    print("  admin@tracehealth.test      Administrator")
-    print("  agency@tracehealth.test     Agency staff")
-    print("  verifier1@tracehealth.test  Verifier (Dandora)")
-    print("  verifier2@tracehealth.test  Verifier + reporter (Mukuru)")
+    print("  admin@example.org      Administrator")
+    print("  agency@example.org     Agency staff")
+    print("  verifier1@example.org  Verifier (Dandora)")
+    print("  verifier2@example.org  Verifier + reporter (Mukuru)")
     print("  +254700000005 / 06 / 07     Reporters (phone login)")
     return 0
 

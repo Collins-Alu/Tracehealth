@@ -10,12 +10,16 @@ never see each other's data and the database stays clean.
 """
 
 import pytest
+from fastapi.testclient import TestClient
 from sqlalchemy import create_engine, text
 from sqlalchemy.orm import Session
 
 from alembic import command
 from alembic.config import Config
 from app.core.config import BACKEND_DIR, get_settings
+from app.core.security import create_access_token
+from app.db.session import get_db
+from app.main import app
 
 
 def _test_database_url() -> str:
@@ -67,3 +71,27 @@ def db(engine):
         session.close()
         outer.rollback()
         connection.close()
+
+
+@pytest.fixture(autouse=True)
+def isolated_uploads(tmp_path, monkeypatch):
+    """Every test stores photos in its own temporary folder."""
+    monkeypatch.setattr(get_settings(), "UPLOAD_DIR", tmp_path / "uploads")
+    return tmp_path / "uploads"
+
+
+@pytest.fixture
+def client(db):
+    """An HTTP client for the API that uses the test's rolled-back session."""
+    app.dependency_overrides[get_db] = lambda: db
+    try:
+        with TestClient(app) as test_client:
+            yield test_client
+    finally:
+        app.dependency_overrides.clear()
+
+
+def auth_headers(user) -> dict[str, str]:
+    """Headers for a user without going through /auth/login (fast)."""
+    token, _ = create_access_token(user.id, user.roles)
+    return {"Authorization": f"Bearer {token}"}

@@ -10,6 +10,7 @@ clear error instead of failing later in a confusing way.
 from functools import lru_cache
 from pathlib import Path
 
+from pydantic import Field
 from pydantic_settings import BaseSettings, SettingsConfigDict
 
 # backend/app/core/config.py -> parents[3] is the repository root
@@ -40,6 +41,25 @@ class Settings(BaseSettings):
 
     # Only used by scripts/seed.py in development
     SEED_DEFAULT_PASSWORD: str = "ChangeMe123!"
+
+    # --- Authentication (Sprint 1) ---------------------------------------
+    # Signs every access token. Must be long and random; see .env.example.
+    JWT_SECRET_KEY: str = Field(min_length=32)
+    JWT_ALGORITHM: str = "HS256"
+    # Short-lived: a stolen access token is only useful for a few minutes
+    ACCESS_TOKEN_EXPIRE_MINUTES: int = 15
+    # Long-lived but revocable (stored hashed in refresh_tokens)
+    REFRESH_TOKEN_EXPIRE_DAYS: int = 30
+    # Phone numbers typed as 07XXXXXXXX are stored as +2547XXXXXXXX
+    DEFAULT_COUNTRY_CODE: str = "254"
+
+    # --- Report photos (Sprint 1) ----------------------------------------
+    UPLOAD_DIR: Path = BACKEND_DIR / "uploads"
+    MAX_PHOTO_MB: int = 8
+    # Photos are shrunk so their longest side is at most this many pixels
+    PHOTO_MAX_DIMENSION: int = 1600
+    # Offline reports may be synced late, but not absurdly late
+    REPORT_MAX_AGE_DAYS: int = 30
 
     @property
     def cors_origin_list(self) -> list[str]:
