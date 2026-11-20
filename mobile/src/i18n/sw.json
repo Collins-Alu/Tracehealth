@@ -236,7 +236,18 @@
     },
     "pushTitle": "Arifa",
     "pushOn": "Arifa za simu na ujumbe",
-    "pushInboxOnly": "Ujumbe tu (arifa za simu zinahitaji toleo kamili la programu)"
+    "pushInboxOnly": "Ujumbe tu (arifa za simu zinahitaji toleo kamili la programu)",
+    "payoutTitle": "Zawadi kwa pesa za simu",
+    "payoutOn": "Zawadi za ripoti zilizothibitishwa zinatumwa kwa {{phone}}.",
+    "payoutOff": "Hujakubali kupokea zawadi. Ripoti zako bado zinahesabiwa.",
+    "payoutConsent": "Nitumie zawadi zangu kwa M-Pesa",
+    "payoutPhone": "Nambari ya M-Pesa",
+    "payoutPhoneHint": "Acha wazi kutumia nambari yako ya kuingia.",
+    "payoutSave": "Hifadhi mipangilio ya zawadi",
+    "payoutSaved": "Mipangilio ya zawadi imehifadhiwa.",
+    "payoutStop": "Acha zawadi",
+    "payoutStopConfirm": "Acha kupokea zawadi? Ripoti ulizotuma ambazo zitathibitishwa baadaye hazitalipwa.",
+    "languageSaveFailed": "Lugha imebadilishwa kwenye simu hii. Itahifadhiwa kwenye akaunti yako utakapokuwa mtandaoni."
   },
   "otherRoles": {
     "title": "TraceHealth",

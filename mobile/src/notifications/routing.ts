@@ -16,4 +16,10 @@ export function notificationTarget(
   return null;
 }
 
-const REPORTER_EVENTS = new Set(['report.verified', 'report.rejected', 'report.flagged']);
+const REPORTER_EVENTS = new Set([
+  'report.verified',
+  'report.rejected',
+  'report.flagged',
+  'payout.sent',
+  'payout.failed',
+]);

@@ -236,7 +236,18 @@
     },
     "pushTitle": "Notifications",
     "pushOn": "Phone alerts and inbox",
-    "pushInboxOnly": "Inbox only (phone alerts need the full app build)"
+    "pushInboxOnly": "Inbox only (phone alerts need the full app build)",
+    "payoutTitle": "Rewards by mobile money",
+    "payoutOn": "Rewards for verified reports are sent to {{phone}}.",
+    "payoutOff": "You have not agreed to receive rewards. Your reports still count.",
+    "payoutConsent": "Send my rewards by M-Pesa",
+    "payoutPhone": "M-Pesa number",
+    "payoutPhoneHint": "Leave empty to use your login number.",
+    "payoutSave": "Save reward settings",
+    "payoutSaved": "Reward settings saved.",
+    "payoutStop": "Stop rewards",
+    "payoutStopConfirm": "Stop receiving rewards? Reports you already sent that are verified later will not be paid.",
+    "languageSaveFailed": "Language changed on this phone. It will be saved to your account next time you are online."
   },
   "otherRoles": {
     "title": "TraceHealth",

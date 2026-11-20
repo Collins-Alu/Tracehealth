@@ -9,6 +9,11 @@ describe('notificationTarget', () => {
     expect(notificationTarget('report.verified', 'r1', ['REPORTER'])).toBe('/report/r1');
     expect(notificationTarget('report.rejected', 'r1', ['REPORTER', 'VERIFIER'])).toBe('/report/r1');
   });
+  test('reward messages open the report they are for', () => {
+    expect(notificationTarget('payout.sent', 'r1', ['REPORTER'])).toBe('/report/r1');
+    expect(notificationTarget('payout.failed', 'r1', ['REPORTER'])).toBe('/report/r1');
+    expect(notificationTarget('payout.sent', 'r1', ['VERIFIER'])).toBeNull();
+  });
   test('nothing to open without a report or a matching role', () => {
     expect(notificationTarget('report.verified', null, ['REPORTER'])).toBeNull();
     expect(notificationTarget('report.submitted', 'r1', ['REPORTER'])).toBeNull();
