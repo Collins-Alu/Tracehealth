@@ -9,6 +9,7 @@ clear error instead of failing later in a confusing way.
 
 from functools import lru_cache
 from pathlib import Path
+from typing import Literal
 
 from pydantic import Field
 from pydantic_settings import BaseSettings, SettingsConfigDict
@@ -61,9 +62,38 @@ class Settings(BaseSettings):
     # Offline reports may be synced late, but not absurdly late
     REPORT_MAX_AGE_DAYS: int = 30
 
+    # --- Notifications (Sprint 2) ----------------------------------------
+    # mock     = log only, nothing leaves the server (default; clearly marked MOCK-)
+    # expo     = Expo push service
+    # disabled = in-app inbox only
+    PUSH_PROVIDER: Literal["mock", "expo", "disabled"] = "mock"
+    # Only needed if "enhanced push security" is switched on in your Expo project
+    EXPO_ACCESS_TOKEN: str | None = None
+
+    # mock | africastalking | disabled
+    SMS_PROVIDER: Literal["mock", "africastalking", "disabled"] = "mock"
+    AT_USERNAME: str = "sandbox"  # "sandbox" for the Africa's Talking sandbox
+    AT_API_KEY: str | None = None
+    AT_SENDER_ID: str | None = None  # optional; not needed in the sandbox
+    # Leave unset to choose the sandbox or live URL from AT_USERNAME
+    AT_API_URL: str | None = None
+
+    # --- Incentive payouts -----------------------------------------------
+    # Sprint 2 records a PENDING payout when a report is verified; Sprint 4
+    # adds the adapter that actually sends it. MOCK = no real money.
+    PAYOUT_PROVIDER: Literal["MOCK", "MPESA_DARAJA"] = "MOCK"
+
     @property
     def cors_origin_list(self) -> list[str]:
         return [o.strip() for o in self.CORS_ORIGINS.split(",") if o.strip()]
+
+    @property
+    def at_messaging_url(self) -> str:
+        if self.AT_API_URL:
+            return self.AT_API_URL
+        if self.AT_USERNAME == "sandbox":
+            return "https://api.sandbox.africastalking.com/version1/messaging"
+        return "https://api.africastalking.com/version1/messaging"
 
     @property
     def is_production(self) -> bool:

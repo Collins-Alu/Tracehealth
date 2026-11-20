@@ -4,7 +4,7 @@ Database engine and session handling.
 We use SQLAlchemy's synchronous API with a connection pool. FastAPI runs
 synchronous endpoints in a worker thread pool, so requests still run
 concurrently; this keeps the code easier to read while comfortably meeting the
-pilot's 200-concurrent-reporter target (verified with a load test in Sprint 5).
+pilot's 200-concurrent-reporter target (verified with a load test in Sprint 4).
 """
 
 from collections.abc import Generator

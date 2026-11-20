@@ -1,18 +1,36 @@
 """
-Notifications.
+Notifications (SRS 3.4; UML B.3 step 6 and B.4 steps 9 and 12).
 
-Sprint 1 stores in-app notifications (shown inside the apps). Push and SMS
-delivery through adapters (Expo push, Africa's Talking) is added in Sprint 3;
-those adapters will send the rows created here.
+Every event creates:
+  * one IN_APP notification per recipient: the inbox inside the app, always
+    available, also with no push token and in Expo Go; and
+  * one delivery notification per recipient on PUSH (if they have a device
+    registered) or SMS, created PENDING.
+
+The delivery rows are sent after the request finishes by
+NotificationDispatcher (notification_dispatch.py), so a slow provider never
+delays the person who triggered the event. If push fails for a reporter, the
+dispatcher falls back to SMS.
+
+Who is told what:
+  * new report      -> verifiers for that zone (in-app + push; no SMS)
+  * verified        -> the reporter (in-app + push, SMS fallback)
+  * rejected        -> the reporter, with the reason (same channels)
+  * flagged         -> the reporter, with the reason (same channels)
 """
 
+import uuid
+from dataclasses import dataclass, field
 from datetime import UTC, datetime
 
-from sqlalchemy import select
+from sqlalchemy import exists, or_, select
 from sqlalchemy.orm import Session
 
-from app.models import Notification, PollutionReport, User, Verifier
+from app.models import DevicePushToken, Notification, Payout, PollutionReport, User, Verifier
 from app.models.enums import Language, NotificationChannel, NotificationStatus
+
+# Event types the dispatcher may fall back to SMS for (reporter-facing only)
+SMS_FALLBACK_TYPES = {"report.verified", "report.rejected", "report.flagged"}
 
 CATEGORY_NAMES = {
     Language.EN: {
@@ -31,36 +49,179 @@ CATEGORY_NAMES = {
     },
 }
 
-NEW_REPORT_TEXT = {
-    Language.EN: ("New report to review", "A new {category} report is waiting for review."),
-    Language.SW: ("Ripoti mpya ya kukagua", "Ripoti mpya ya {category} inasubiri kukaguliwa."),
+TEMPLATES = {
+    "report.submitted": {
+        Language.EN: ("New report to review", "A new {category} report is waiting for review."),
+        Language.SW: ("Ripoti mpya ya kukagua", "Ripoti mpya ya {category} inasubiri kukaguliwa."),
+    },
+    "report.verified": {
+        Language.EN: (
+            "Report verified",
+            "Thank you! Your {category} report was confirmed.{reward}",
+        ),
+        Language.SW: (
+            "Ripoti imethibitishwa",
+            "Asante! Ripoti yako ya {category} imethibitishwa.{reward}",
+        ),
+    },
+    "report.rejected": {
+        Language.EN: (
+            "Report not accepted",
+            "Your {category} report was not accepted. Reason: {reason}",
+        ),
+        Language.SW: (
+            "Ripoti haikukubaliwa",
+            "Ripoti yako ya {category} haikukubaliwa. Sababu: {reason}",
+        ),
+    },
+    "report.flagged": {
+        Language.EN: (
+            "Report under review",
+            "Your {category} report is being checked again. Reason: {reason}. "
+            "We will tell you the result.",
+        ),
+        Language.SW: (
+            "Ripoti inakaguliwa",
+            "Ripoti yako ya {category} inakaguliwa tena. Sababu: {reason}. "
+            "Tutakujulisha matokeo.",
+        ),
+    },
+}
+
+REWARD_TEXT = {
+    Language.EN: " Your reward of {currency} {amount} is being processed.",
+    Language.SW: " Zawadi yako ya {currency} {amount} inashughulikiwa.",
 }
 
 
-def notify_verifiers_of_new_report(db: Session, report: PollutionReport) -> int:
-    """Create an in-app notification for every active verifier except the reporter.
+@dataclass
+class NotifyResult:
+    recipients: int = 0
+    delivery_ids: list[uuid.UUID] = field(default_factory=list)
 
-    Returns how many verifiers were notified. Zone-based targeting is added in
-    Sprint 3 together with the zone filter on the pending-reports list.
+
+def _render(event: str, language: Language, report: PollutionReport, **extra) -> tuple[str, str]:
+    title, body = TEMPLATES[event][language]
+    return title, body.format(category=CATEGORY_NAMES[language][report.category.value], **extra)
+
+
+def _has_push_token(db: Session, user_id: uuid.UUID) -> bool:
+    return bool(db.scalar(select(exists().where(DevicePushToken.user_id == user_id))))
+
+
+def _create(
+    db: Session,
+    *,
+    user: tuple[uuid.UUID, Language],
+    event: str,
+    report: PollutionReport,
+    allow_sms: bool,
+    result: NotifyResult,
+    **extra,
+) -> None:
+    user_id, language = user
+    title, body = _render(event, language, report, **extra)
+    now = datetime.now(UTC)
+    db.add(
+        Notification(
+            user_id=user_id,
+            type=event,
+            title=title,
+            body=body,
+            channel=NotificationChannel.IN_APP,
+            status=NotificationStatus.SENT,  # stored = available in the inbox
+            related_report_id=report.id,
+            sent_at=now,
+            # Real clock time, so the inbox order is right even for several
+            # notifications created in one transaction (now() would tie)
+            created_at=now,
+        )
+    )
+    channel = (
+        NotificationChannel.PUSH
+        if _has_push_token(db, user_id)
+        else (NotificationChannel.SMS if allow_sms else None)
+    )
+    if channel is not None:
+        delivery = Notification(
+            id=uuid.uuid4(),
+            user_id=user_id,
+            type=event,
+            title=title,
+            body=body,
+            channel=channel,
+            status=NotificationStatus.PENDING,
+            related_report_id=report.id,
+            created_at=now,
+        )
+        db.add(delivery)
+        result.delivery_ids.append(delivery.id)
+    result.recipients += 1
+
+
+def notify_verifiers_of_new_report(db: Session, report: PollutionReport) -> NotifyResult:
+    """Tell the verifiers responsible for the report's zone.
+
+    A verifier is responsible if assigned to that zone or to no zone. Reports
+    outside every zone go to all verifiers. The reporter is never told about
+    their own report, even if they are also a verifier.
     """
-    rows = db.execute(
+    query = (
         select(User.id, User.preferred_language)
         .join(Verifier, Verifier.user_id == User.id)
         .where(User.is_active.is_(True), User.id != report.reporter_id)
-    ).all()
-    now = datetime.now(UTC)
-    for user_id, language in rows:
-        title, body = NEW_REPORT_TEXT[language]
-        db.add(
-            Notification(
-                user_id=user_id,
-                type="report.submitted",
-                title=title,
-                body=body.format(category=CATEGORY_NAMES[language][report.category.value]),
-                channel=NotificationChannel.IN_APP,
-                status=NotificationStatus.SENT,  # stored = delivered for in-app messages
-                related_report_id=report.id,
-                sent_at=now,
-            )
+    )
+    if report.zone_code is not None:
+        query = query.where(
+            or_(Verifier.assigned_zone == report.zone_code, Verifier.assigned_zone.is_(None))
         )
-    return len(rows)
+    result = NotifyResult()
+    for row in db.execute(query).all():
+        _create(
+            db,
+            user=(row.id, row.preferred_language),
+            event="report.submitted",
+            report=report,
+            allow_sms=False,
+            result=result,
+        )
+    return result
+
+
+def notify_reporter_of_decision(
+    db: Session,
+    report: PollutionReport,
+    event: str,
+    reason: str | None = None,
+    payout: Payout | None = None,
+) -> NotifyResult:
+    reporter = db.execute(
+        select(User.id, User.preferred_language).where(User.id == report.reporter_id)
+    ).one()
+    language = reporter.preferred_language
+    reward = (
+        REWARD_TEXT[language].format(currency=payout.currency, amount=f"{payout.amount:.0f}")
+        if payout is not None
+        else ""
+    )
+    result = NotifyResult()
+    _create(
+        db,
+        user=(reporter.id, language),
+        event=event,
+        report=report,
+        allow_sms=True,
+        result=result,
+        reason=reason or "",
+        reward=reward,
+    )
+    return result
+
+
+# --------------------------------------------------------------------------
+# Inbox
+# --------------------------------------------------------------------------
+def inbox_query(user_id: uuid.UUID):
+    return select(Notification).where(
+        Notification.user_id == user_id, Notification.channel == NotificationChannel.IN_APP
+    )
