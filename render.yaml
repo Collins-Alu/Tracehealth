@@ -1,0 +1,50 @@
+# Render Blueprint for the public TraceHealth DEMO API (free plan).
+# Render: New + > Blueprint > pick this repository. It asks for the values
+# marked "sync: false". Step by step: docs/hosting-guide.md
+services:
+  - type: web
+    name: tracehealth-api
+    runtime: docker
+    plan: free
+    region: frankfurt
+    dockerfilePath: ./backend/Dockerfile
+    dockerContext: ./backend
+    # Only rebuild the API when backend files change
+    buildFilter:
+      paths:
+        - backend/**
+    healthCheckPath: /health
+    autoDeploy: true
+    envVars:
+      # Neon connection string (Neon > Connect > copy the URL)
+      - key: DATABASE_URL
+        sync: false
+      # Your Netlify dashboard address, e.g. https://tracehealth-demo.netlify.app
+      - key: CORS_ORIGINS
+        sync: false
+      - key: JWT_SECRET_KEY
+        generateValue: true
+      # A public demo with SYNTHETIC data and known demo logins
+      - key: ENVIRONMENT
+        value: demo
+      - key: SEED_DEMO_DATA
+        value: "true"
+      # Free instances have 512 MB and a disk that is wiped on every restart:
+      # one worker, and photos stored in the database
+      - key: WEB_CONCURRENCY
+        value: "1"
+      - key: STORAGE_BACKEND
+        value: database
+      - key: DB_POOL_SIZE
+        value: "3"
+      - key: DB_MAX_OVERFLOW
+        value: "2"
+      # Payouts, retries and messages: in-process jobs; everything mock (no real money or SMS)
+      - key: BACKGROUND_JOBS_ENABLED
+        value: "true"
+      - key: PAYOUT_PROVIDER
+        value: MOCK
+      - key: PUSH_PROVIDER
+        value: mock
+      - key: SMS_PROVIDER
+        value: mock
