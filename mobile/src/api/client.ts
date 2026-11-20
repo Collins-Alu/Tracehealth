@@ -98,7 +98,10 @@ export function createApiClient(deps: ApiClientDeps) {
         body,
         signal: controller.signal,
       });
-    } catch {
+    } catch (e) {
+      // Shown in the Expo terminal while developing: otherwise every failure
+      // looks the same ("offline")
+      if (__DEV__) console.warn('[api] fetch failed', opts.method ?? 'GET', path, e);
       throw new NetworkError(); // offline, DNS failure, timeout, connection reset
     } finally {
       clearTimeout(timer);

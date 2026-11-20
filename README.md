@@ -199,8 +199,8 @@ npx tsc --noEmit     # typecheck
 npx jest             # unit and component tests
 ```
 
-- Health check: http://localhost:8000/health
-- Interactive API docs (Swagger): http://localhost:8000/docs
+- When the API runs on your own computer: health check `http://localhost:8000/health` and Swagger docs `http://localhost:8000/docs` (these only work locally).
+- Online demo: [health check](https://tracehealth-api-4msu.onrender.com/health) and [Swagger docs](https://tracehealth-api-4msu.onrender.com/docs).
 
 ### Push notifications (optional)
 

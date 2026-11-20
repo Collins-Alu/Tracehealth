@@ -1,3 +1,5 @@
+import { File } from 'expo-file-system';
+
 import { UPLOAD_TIMEOUT_MS } from '@/config';
 import type { QueuedReport } from '@/offline/types';
 
@@ -22,12 +24,9 @@ export const reportsApi = {
     form.append('captured_at', item.capturedAt);
     form.append('created_offline', item.createdOffline ? 'true' : 'false');
     if (item.description) form.append('description', item.description);
-    // React Native's FormData accepts a { uri, name, type } object for files
-    form.append('photo', {
-      uri: item.photoUri,
-      name: 'photo.jpg',
-      type: 'image/jpeg',
-    } as unknown as Blob);
+    // Expo's fetch (SDK 54+) needs a real File; the old React Native
+    // { uri, name, type } object is rejected with "Unsupported FormDataPart"
+    form.append('photo', new File(item.photoUri), 'photo.jpg');
     return api.request<SubmitResult>(`/reports/${item.clientReportId}/sync`, {
       method: 'POST',
       form,
