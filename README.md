@@ -5,17 +5,18 @@ environmental agencies can prioritise cleanup and advisories by health impact.
 
 Built from the *TraceHealth Proposal and SRS* (Collins Gathungu, ALU).
 
-> **Status: Sprint 1 complete.** Login and registration, role-based access,
-> report submission with photo and GPS, offline queue with automatic sync,
-> and the reporter mobile app (English and Swahili). Verification arrives in
-> Sprint 3.
+> **Status: Sprint 2 complete.** Reporting with offline sync (Sprint 1) plus
+> verification: verifier review screens with zone filter, confirm / reject /
+> flag with reasons, second review of flagged reports, audit log, and
+> notifications (in-app inbox, push, SMS fallback). Health analytics and the
+> web dashboard come in Sprint 3; payouts are sent in Sprint 4.
 
 ## Repository layout
 
 ```
 tracehealth/
 ├── backend/            FastAPI API, SQLAlchemy models, Alembic migrations, tests
-├── dashboard/          React web dashboard            (created in Sprint 4)
+├── dashboard/          React web dashboard            (created in Sprint 3)
 ├── mobile/             React Native / Expo app (Expo SDK 58)
 ├── docs/               Decisions, methods, traceability matrix
 ├── infra/              Docker support files
@@ -81,8 +82,8 @@ Development logins after `python -m scripts.seed` (password `ChangeMe123!`):
 | Login | Role |
 |---|---|
 | `0700000005`, `0700000006`, `0700000007` | Reporter |
-| `verifier2@example.org` | Verifier and reporter |
-| `verifier1@example.org` | Verifier |
+| `verifier2@example.org` | Verifier (Mukuru zone) and reporter |
+| `verifier1@example.org` | Verifier (Dandora zone) |
 | `agency@example.org` | Agency staff |
 | `admin@example.org` | Administrator |
 
@@ -93,7 +94,7 @@ cd mobile
 npm install
 cp .env.example .env            # Windows: Copy-Item .env.example .env
 #    set EXPO_PUBLIC_API_URL to http://<your computer's Wi-Fi IP>:8000
-npx expo start                  # scan the QR code with Expo Go
+npx expo start --go             # scan the QR code with Expo Go
 ```
 
 The phone and computer must be on the same Wi-Fi. If the app can't reach the
@@ -110,6 +111,29 @@ npx jest             # unit and component tests
 
 - Health check: http://localhost:8000/health
 - Interactive API docs (Swagger): http://localhost:8000/docs
+
+### Push notifications (optional)
+
+In Expo Go, notifications appear in the app's **Inbox** tab only: Expo Go on
+Android cannot receive push notifications. To get phone alerts:
+
+```bash
+npm install -g eas-cli
+eas login                      # free Expo account
+eas init                       # adds your project id to app.json
+eas build --profile development --platform android
+```
+
+Install the APK it produces, start the backend with `PUSH_PROVIDER=expo` in
+`.env`, and run `npx expo start --dev-client`. The Account tab shows
+"Phone alerts and inbox" when push is active.
+
+### SMS fallback (optional)
+
+With `SMS_PROVIDER=mock` (default) SMS messages are only logged. To use the
+Africa's Talking sandbox, set `SMS_PROVIDER=africastalking`, `AT_USERNAME=sandbox`
+and `AT_API_KEY` in `.env` (see `.env.example`). Sandbox messages appear in the
+Africa's Talking simulator, not on real phones.
 
 ## Backend tests
 
@@ -141,7 +165,9 @@ alembic check                                  # confirm models and DB agree
 | PowerShell blocks `Activate.ps1` | Run once: `Set-ExecutionPolicy -Scope CurrentUser RemoteSigned` |
 | Apple Silicon "no matching manifest" | Uncomment `platform: linux/amd64` in `docker-compose.yml` |
 | `JWT_SECRET_KEY ... at least 32 characters` | Set `JWT_SECRET_KEY` in `.env` (see setup step 1) |
-| Phone app says "No connection" | Check `EXPO_PUBLIC_API_URL`, start uvicorn with `--host 0.0.0.0`, then restart `npx expo start` (env values are read at start) |
+| Phone app says "No connection" | Check `EXPO_PUBLIC_API_URL`, start uvicorn with `--host 0.0.0.0`, then restart `npx expo start --go` (env values are read at start) |
+| Verifier list is empty | You may be filtered to your zone: tap **All zones**. Your own reports never appear in your review list. |
+| Photos don't load in the review screen | Re-run `python -m scripts.seed --reset` (Sprint 2 seed generates placeholder photos) |
 | `npx expo install` fails behind a proxy | Use `npm install <pkg>@<version>` with the version from `node_modules/expo/bundledNativeModules.json` |
 
 ## Data and safety principles
