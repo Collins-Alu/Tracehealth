@@ -10,7 +10,6 @@ from app.core.security import (
     hash_refresh_token,
     new_refresh_token,
 )
-from app.services import photo_storage
 
 
 @pytest.mark.parametrize(
@@ -62,6 +61,10 @@ def test_refresh_tokens_are_random_and_stored_hashed():
     assert a not in a_hash
 
 
-def test_storage_keys_cannot_escape_the_upload_folder():
+def test_storage_keys_cannot_escape_the_upload_folder(tmp_path):
+    from app.storage.local import LocalPhotoStorage
+
+    storage = LocalPhotoStorage(tmp_path)
     with pytest.raises(ValueError):
-        photo_storage._path_for("../../etc/passwd")
+        storage.save("../../etc/passwd", b"x")
+    assert storage.read("../../etc/passwd") is None

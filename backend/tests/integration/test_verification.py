@@ -70,7 +70,10 @@ def test_confirm_marks_verified_requests_payout_audits_and_notifies(
     assert body["payout_requested"] is True
 
     payout = db.scalar(select(Payout).where(Payout.report_id == report.id))
-    assert payout.status == PayoutStatus.PENDING  # sent by the Sprint 4 adapter
+    # B.4 steps 7-8: sent straight after the decision (mock adapter: no real money)
+    assert payout.status == PayoutStatus.SUCCESS
+    assert payout.transaction_ref.startswith("MOCK-TXN-")
+    assert payout.attempts == 1
     assert payout.provider == PayoutProvider.MOCK
     assert payout.reporter_id == reporter.id
     assert str(payout.amount) == "50.00"
@@ -80,16 +83,21 @@ def test_confirm_marks_verified_requests_payout_audits_and_notifies(
     assert audit.details["previous_status"] == "PENDING"
     assert audit.details["payout_id"] == str(payout.id)
 
-    inbox = db.scalar(
-        select(Notification).where(
-            Notification.user_id == reporter.id,
-            Notification.channel == NotificationChannel.IN_APP,
+    inbox = {
+        n.type: n
+        for n in db.scalars(
+            select(Notification).where(
+                Notification.user_id == reporter.id,
+                Notification.channel == NotificationChannel.IN_APP,
+            )
         )
-    )
-    assert inbox.title == "Report verified"
-    assert "KES 50" in inbox.body
+    }
+    assert inbox["report.verified"].title == "Report verified"
+    assert "KES 50" in inbox["report.verified"].body
+    assert inbox["payout.sent"].title == "Reward sent"
+    assert "TEST payment" in inbox["payout.sent"].body  # never passed off as real money
     # No phone registered for push, so the reporter is told by SMS (SRS 3.4)
-    assert [phone for phone, _ in outbox.sms.sent] == [reporter.phone_number]
+    assert [phone for phone, _ in outbox.sms.sent] == [reporter.phone_number] * 2
 
 
 def test_no_payout_without_consent_but_report_still_verified(client, db, verifier):

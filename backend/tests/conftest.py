@@ -9,23 +9,30 @@ Each test runs inside a transaction that is rolled back afterwards, so tests
 never see each other's data and the database stays clean.
 """
 
+import os
 from contextlib import nullcontext
 from dataclasses import dataclass
 
 import pytest
+
+# Background jobs would use the development database: never in tests
+os.environ["BACKGROUND_JOBS_ENABLED"] = "false"
 from fastapi.testclient import TestClient
 from sqlalchemy import create_engine, text
 from sqlalchemy.orm import Session
 
 from alembic import command
 from alembic.config import Config
+from app.core.background import PayoutProcessor, get_payout_processor
 from app.core.config import BACKEND_DIR, get_settings
 from app.core.notifications import get_notification_dispatcher
 from app.core.security import create_access_token
 from app.db.session import get_db
+from app.integrations.payments.mock import MockPaymentAdapter
 from app.integrations.push.mock import MockPushSender
 from app.integrations.sms.mock import MockSmsSender
 from app.main import app
+from app.models.enums import PayoutProvider
 from app.services.notification_dispatch import NotificationDispatcher
 
 
@@ -94,13 +101,17 @@ class Outbox:
     push: MockPushSender
     sms: MockSmsSender
     dispatcher: NotificationDispatcher
+    payments: dict
+    processor: PayoutProcessor
 
 
 @pytest.fixture
 def outbox(db) -> Outbox:
     push, sms = MockPushSender(), MockSmsSender()
     dispatcher = NotificationDispatcher(lambda: nullcontext(db), push, sms)
-    return Outbox(push=push, sms=sms, dispatcher=dispatcher)
+    payments = {PayoutProvider.MOCK: MockPaymentAdapter()}
+    processor = PayoutProcessor(lambda: nullcontext(db), payments, dispatcher)
+    return Outbox(push=push, sms=sms, dispatcher=dispatcher, payments=payments, processor=processor)
 
 
 @pytest.fixture
@@ -108,6 +119,7 @@ def client(db, outbox):
     """An HTTP client for the API that uses the test's rolled-back session."""
     app.dependency_overrides[get_db] = lambda: db
     app.dependency_overrides[get_notification_dispatcher] = lambda: outbox.dispatcher
+    app.dependency_overrides[get_payout_processor] = lambda: outbox.processor
     try:
         with TestClient(app) as test_client:
             yield test_client
