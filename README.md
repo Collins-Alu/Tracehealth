@@ -11,6 +11,46 @@ Built from the *TraceHealth Proposal and SRS* (Collins Gathungu, ALU).
 > every level and deployment files. See `docs/changelog.md` for what each
 > sprint added.
 
+## Try it online (no installation)
+
+| What | Link |
+|---|---|
+| Web dashboard | **DASHBOARD_URL** |
+| API and interactive docs | **API_URL**/docs |
+| Android app (APK) | **APK_URL** (GitHub Releases) |
+| SRS document | **SRS_URL** |
+
+> The demo uses **synthetic data only** and payouts are **test payments**
+> (no real money). The API runs on a free plan that sleeps when idle: the first
+> request after a quiet spell can take **up to a minute**. If the dashboard or
+> app seems stuck, open **API_URL**/health once, wait for `"status": "ok"`,
+> then try again.
+
+Demo logins (password for all: `ChangeMe123!`):
+
+| Login | Role | Use it in |
+|---|---|---|
+| `admin@example.org` | Administrator | dashboard |
+| `agency@example.org` | Agency staff | dashboard |
+| `verifier1@example.org` | Verifier (Dandora zone) | Android app |
+| `0700000005` | Reporter | Android app |
+
+You can also register a new reporter account in the app.
+
+### Install the Android app
+
+1. On an Android phone (Android 8 or newer), open **APK_URL** and download
+   `TraceHealth-1.0.0.apk`.
+2. Open the downloaded file. If Android asks, allow your browser to
+   **install unknown apps** (Settings → Apps → your browser → Install unknown apps).
+3. Tap **Install**, then **Open**.
+4. Choose English or Kiswahili, then log in with a demo account above or
+   register as a reporter.
+5. Allow camera and location when you submit your first report.
+
+The demo app uses in-app notifications (the **Inbox** tab); phone push
+alerts are switched off on the free demo.
+
 ## Repository layout
 
 ```
@@ -29,14 +69,40 @@ tracehealth/
 
 ## Prerequisites
 
+You only need these to run TraceHealth on your own computer.
+
 | Tool | Version | Check with |
 |---|---|---|
 | Git | any recent | `git --version` |
-| Python | 3.12 | `python --version` (Windows) / `python3 --version` |
-| Docker Desktop | any recent | `docker --version` and `docker compose version` |
-| VS Code | any recent | recommended extensions are suggested on first open |
+| Python | 3.12 or 3.13 | `python --version` (Windows) / `python3 --version` |
+| Docker (with Compose) | any recent | `docker --version` and `docker compose version` |
 | Node.js | 22 LTS | `node --version` (mobile app and dashboard) |
-| Expo Go app | SDK 58 | install from the Play Store on your Android phone |
+| VS Code | any recent | recommended extensions are suggested on first open |
+| Expo Go app | SDK 58 | Play Store, on your Android phone (or use the APK above) |
+
+Installing them:
+
+```bash
+# Manjaro / Arch
+sudo pacman -S --needed git python nodejs-lts-jod npm docker docker-compose
+sudo systemctl enable --now docker
+sudo usermod -aG docker $USER          # then log out and back in
+
+# Ubuntu / Debian
+sudo apt install git python3 python3-venv
+# Node.js 22: https://nodejs.org/en/download  Docker: https://docs.docker.com/engine/install/ubuntu/
+
+# Windows / macOS
+# Install Git, Python 3.12, Node.js 22 LTS and Docker Desktop from their websites.
+```
+
+## Get the code
+
+```bash
+git clone https://github.com/GITHUB_USER/tracehealth.git
+cd tracehealth
+code .                                 # open in VS Code
+```
 
 ## First-time setup
 
@@ -184,7 +250,9 @@ To try the M-Pesa Daraja sandbox, follow `docs/deployment.md` §8.
 
 ## Deployment
 
-`docs/deployment.md` covers a single-server deployment with Docker Compose,
+- **Public demo on free hosting** (Render + Neon + Netlify + an APK on GitHub
+  Releases): `docs/hosting-guide.md`, step by step.
+- **Pilot on your own server:** `docs/deployment.md` covers a single-server deployment with Docker Compose,
 HTTPS via Caddy, backups, the mobile release build and switching on real
 push, SMS and M-Pesa.
 
@@ -227,6 +295,7 @@ alembic check                                  # confirm models and DB agree
 | `docs/health-linkage-method.md` | The statistical method in plain language, and its limits |
 | `docs/api.md` | Authentication, roles, conventions, every endpoint (live: `/docs`) |
 | `docs/data-protection.md` | What is collected, who sees what, safeguards, rights |
+| `docs/hosting-guide.md` | Free public demo: GitHub, Neon, Render, Netlify, APK |
 | `docs/deployment.md` | Server setup, backups, providers, pre-pilot checklist |
 | `docs/testing.md` | Test levels, E2E, load-test results |
 | `docs/user-guide.md` | Guides for reporters, verifiers, agency staff, administrators |
