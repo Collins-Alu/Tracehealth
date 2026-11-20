@@ -1,0 +1,92 @@
+# TraceHealth production stack on one server (pilot scale).
+#   1. Copy .env.production.example to .env.production and fill it in.
+#   2. docker compose --env-file .env.production -f docker-compose.prod.yml up -d --build
+# See docs/deployment.md for the full checklist.
+services:
+  db:
+    image: postgis/postgis:16-3.4
+    restart: unless-stopped
+    environment:
+      POSTGRES_USER: ${POSTGRES_USER}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
+      POSTGRES_DB: ${POSTGRES_DB}
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER} -d ${POSTGRES_DB}"]
+      interval: 5s
+      timeout: 5s
+      retries: 20
+    # Not published: only the api and jobs containers can reach the database
+
+  # Applies database migrations, then exits. api and jobs wait for it.
+  migrate:
+    build: ./backend
+    env_file: .env.production
+    environment: &backend_env
+      ENVIRONMENT: production
+      DATABASE_URL: postgresql+psycopg://${POSTGRES_USER}:${POSTGRES_PASSWORD}@db:5432/${POSTGRES_DB}
+      CORS_ORIGINS: https://${DASHBOARD_DOMAIN}
+      UPLOAD_DIR: /data/uploads
+    command: ["alembic", "upgrade", "head"]
+    depends_on:
+      db:
+        condition: service_healthy
+    restart: "no"
+
+  api:
+    build: ./backend
+    env_file: .env.production
+    environment:
+      <<: *backend_env
+      # Jobs run once, in the jobs container (D46)
+      BACKGROUND_JOBS_ENABLED: "false"
+    volumes:
+      - uploads:/data/uploads
+    depends_on:
+      migrate:
+        condition: service_completed_successfully
+    restart: unless-stopped
+
+  jobs:
+    build: ./backend
+    env_file: .env.production
+    environment:
+      <<: *backend_env
+      BACKGROUND_JOBS_ENABLED: "true"
+    command: ["python", "-m", "scripts.run_jobs"]
+    volumes:
+      - uploads:/data/uploads
+    healthcheck:
+      disable: true
+    depends_on:
+      migrate:
+        condition: service_completed_successfully
+    restart: unless-stopped
+
+  caddy:
+    build:
+      context: .
+      dockerfile: infra/caddy/Dockerfile
+      args:
+        VITE_API_URL: https://${API_DOMAIN}
+    environment:
+      API_DOMAIN: ${API_DOMAIN}
+      DASHBOARD_DOMAIN: ${DASHBOARD_DOMAIN}
+      ACME_EMAIL: ${ACME_EMAIL}
+    ports:
+      - "80:80"
+      - "443:443"
+      - "443:443/udp"
+    volumes:
+      - caddy_data:/data
+      - caddy_config:/config
+    depends_on:
+      - api
+    restart: unless-stopped
+
+volumes:
+  pgdata:
+  uploads:
+  caddy_data:
+  caddy_config:
