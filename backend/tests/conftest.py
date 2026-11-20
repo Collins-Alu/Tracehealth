@@ -9,6 +9,9 @@ Each test runs inside a transaction that is rolled back afterwards, so tests
 never see each other's data and the database stays clean.
 """
 
+from contextlib import nullcontext
+from dataclasses import dataclass
+
 import pytest
 from fastapi.testclient import TestClient
 from sqlalchemy import create_engine, text
@@ -17,9 +20,13 @@ from sqlalchemy.orm import Session
 from alembic import command
 from alembic.config import Config
 from app.core.config import BACKEND_DIR, get_settings
+from app.core.notifications import get_notification_dispatcher
 from app.core.security import create_access_token
 from app.db.session import get_db
+from app.integrations.push.mock import MockPushSender
+from app.integrations.sms.mock import MockSmsSender
 from app.main import app
+from app.services.notification_dispatch import NotificationDispatcher
 
 
 def _test_database_url() -> str:
@@ -80,10 +87,27 @@ def isolated_uploads(tmp_path, monkeypatch):
     return tmp_path / "uploads"
 
 
+@dataclass
+class Outbox:
+    """What the mock push/SMS adapters 'sent' during a test."""
+
+    push: MockPushSender
+    sms: MockSmsSender
+    dispatcher: NotificationDispatcher
+
+
 @pytest.fixture
-def client(db):
+def outbox(db) -> Outbox:
+    push, sms = MockPushSender(), MockSmsSender()
+    dispatcher = NotificationDispatcher(lambda: nullcontext(db), push, sms)
+    return Outbox(push=push, sms=sms, dispatcher=dispatcher)
+
+
+@pytest.fixture
+def client(db, outbox):
     """An HTTP client for the API that uses the test's rolled-back session."""
     app.dependency_overrides[get_db] = lambda: db
+    app.dependency_overrides[get_notification_dispatcher] = lambda: outbox.dispatcher
     try:
         with TestClient(app) as test_client:
             yield test_client

@@ -22,6 +22,7 @@ from app.models import (
     User,
     Verification,
     Verifier,
+    Zone,
 )
 from app.models.enums import (
     ConditionCategory,
@@ -38,7 +39,8 @@ _counter = itertools.count(1)
 TEST_PASSWORD_HASH = "$argon2id$v=19$m=65536,t=3,p=4$dGVzdHNhbHR0ZXN0$test-hash-not-real"
 
 
-def make_user(db: Session, *roles: str, **overrides) -> User:
+def make_user(db: Session, *roles: str, zone: str | None = None, **overrides) -> User:
+    """Create a user holding the given roles. `zone` is the verifier's assigned zone code."""
     n = next(_counter)
     user = User(
         full_name=overrides.pop("full_name", f"Test User {n}"),
@@ -50,7 +52,7 @@ def make_user(db: Session, *roles: str, **overrides) -> User:
     if "REPORTER" in roles:
         user.reporter_profile = Reporter()
     if "VERIFIER" in roles:
-        user.verifier_profile = Verifier(assigned_zone="Zone A")
+        user.verifier_profile = Verifier(assigned_zone=zone)
     if "AGENCY_STAFF" in roles:
         user.agency_staff_profile = AgencyStaff(agency_name="County Environment Office")
     if "ADMINISTRATOR" in roles:
@@ -153,3 +155,17 @@ def make_summary(
     db.add(summary)
     db.flush()
     return summary
+
+
+def make_zone(db: Session, code: str = "ZONE-A", **overrides) -> Zone:
+    zone = Zone(
+        code=code,
+        name=overrides.pop("name", f"Zone {code}"),
+        latitude=overrides.pop("latitude", -1.2921),
+        longitude=overrides.pop("longitude", 36.8219),
+        radius_km=overrides.pop("radius_km", 2),
+        **overrides,
+    )
+    db.add(zone)
+    db.flush()
+    return zone
