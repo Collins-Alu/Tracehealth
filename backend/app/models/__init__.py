@@ -12,6 +12,7 @@ from app.models.notification import Notification
 from app.models.payout import Payout
 from app.models.report import PollutionReport
 from app.models.setting import SystemSetting
+from app.models.stored_photo import StoredPhoto
 from app.models.user import Administrator, AgencyStaff, Reporter, User, Verifier
 from app.models.verification import Verification
 from app.models.zone import Zone
@@ -31,6 +32,7 @@ __all__ = [
     "PollutionReport",
     "RefreshToken",
     "Reporter",
+    "StoredPhoto",
     "SystemSetting",
     "User",
     "Verification",
