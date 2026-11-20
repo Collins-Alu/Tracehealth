@@ -59,6 +59,10 @@ class PollutionReport(UUIDPrimaryKeyMixin, Base):
         enum_column(PollutionCategory, "pollution_category"), nullable=False, index=True
     )
     description: Mapped[str | None] = mapped_column(Text)
+    # Set automatically from the location when the report arrives (see Zone)
+    zone_code: Mapped[str | None] = mapped_column(
+        String(40), ForeignKey("zones.code", ondelete="SET NULL", onupdate="CASCADE"), index=True
+    )
     # When the photo was taken on the device (may be hours before upload if offline)
     captured_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), nullable=False)
     # When the server received it

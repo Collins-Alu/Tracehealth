@@ -1,4 +1,11 @@
-"""Notification: messages to users about their reports and payouts."""
+"""
+Notification: messages to users about their reports and payouts.
+
+Each event creates one IN_APP row (the inbox inside the app) and, when the
+user should also be alerted outside the app, one delivery row on the PUSH or
+SMS channel. Delivery rows start PENDING and are sent in the background after
+the request finishes, so a slow provider never delays the verifier.
+"""
 
 import uuid
 from datetime import datetime
@@ -34,5 +41,9 @@ class Notification(UUIDPrimaryKeyMixin, CreatedAtMixin, Base):
     related_report_id: Mapped[uuid.UUID | None] = mapped_column(
         UUID(as_uuid=True), ForeignKey("pollution_reports.id", ondelete="SET NULL")
     )
+    # Message id from the push/SMS provider, or "MOCK-..." when a mock adapter
+    # handled it (development only: nothing was really delivered)
+    provider_ref: Mapped[str | None] = mapped_column(String(120))
+    failure_reason: Mapped[str | None] = mapped_column(Text)
     sent_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True))
     read_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True))
