@@ -15,15 +15,15 @@ Built from the *TraceHealth Proposal and SRS* (Collins Gathungu, ALU).
 
 | What | Link |
 |---|---|
-| Web dashboard | **DASHBOARD_URL** |
-| API and interactive docs | **API_URL**/docs |
-| Android app (APK) | **APK_URL** (GitHub Releases) |
-| SRS document | **SRS_URL** |
+| Web dashboard | https://tracehealth-bpqa.netlify.app |
+| API and interactive docs | https://tracehealth-api-4msu.onrender.com/docs |
+| Android app (APK) | https://github.com/Collins-Alu/tracehealth/releases/download/v1.0.0/TraceHealth-1.0.0.apk (GitHub Releases) |
+| SRS document |  |
 
 > The demo uses **synthetic data only** and payouts are **test payments**
 > (no real money). The API runs on a free plan that sleeps when idle: the first
 > request after a quiet spell can take **up to a minute**. If the dashboard or
-> app seems stuck, open **API_URL**/health once, wait for `"status": "ok"`,
+> app seems stuck, open https://tracehealth-api-4msu.onrender.com/health once, wait for `"status": "ok"`,
 > then try again.
 
 Demo logins (password for all: `ChangeMe123!`):
@@ -39,7 +39,7 @@ You can also register a new reporter account in the app.
 
 ### Install the Android app
 
-1. On an Android phone (Android 8 or newer), open **APK_URL** and download
+1. On an Android phone (Android 8 or newer), open https://github.com/Collins-Alu/tracehealth/releases/download/v1.0.0/TraceHealth-1.0.0.apk and download
    `TraceHealth-1.0.0.apk`.
 2. Open the downloaded file. If Android asks, allow your browser to
    **install unknown apps** (Settings → Apps → your browser → Install unknown apps).
@@ -99,7 +99,7 @@ sudo apt install git python3 python3-venv
 ## Get the code
 
 ```bash
-git clone https://github.com/GITHUB_USER/tracehealth.git
+git clone https://github.com/Collins-Alu/tracehealth.git
 cd tracehealth
 code .                                 # open in VS Code
 ```
