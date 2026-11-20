@@ -62,3 +62,48 @@ SRS was silent, these defaults were proposed and accepted.
 
 - A push/SMS delivery queued in the moment before the server stops is left PENDING and not retried automatically. A retry job is planned with the payout processing in Sprint 4.
 - Notification messages are stored in the language the user had when the event happened; switching language later does not translate old messages.
+
+The first limitation is resolved in Sprint 4: the periodic jobs retry push/SMS
+deliveries left PENDING for more than two minutes.
+
+## Sprint 3 decisions (health analytics and dashboard)
+
+| # | Topic | Decision |
+|---|---|---|
+| D43 | Linkage windows (refines D16) | Whole clinic periods are assigned to a window: baseline = periods that end in the `baseline_weeks` before the report date; follow-up = periods that start on or after it, within `followup_weeks`. The period containing the report date is in neither (it mixes before and after). INSUFFICIENT_DATA when either window is less than 50 % covered or the baseline has fewer than `min_baseline_visits`; the reason is stored. Full write-up: `health-linkage-method.md`. |
+| D44 | Correlation score | Spearman correlation across all periods in both windows, including the report's own period. Descriptive only: it never decides SIGNAL, because health effects lag exposure. |
+| D45 | When linkages are recalculated | After every accepted clinic import (all reports), after each verification (that report), and when an administrator changes a linkage setting (all). Old results are replaced. Failures are logged and never block the import or decision. |
+| D46 | Clinic import | One CSV format with an allow-list of columns; the file is accepted or refused as a whole (nothing partial). Column names suggesting personal data and cell values that look like phone numbers or emails refuse the file. Periods up to 31 days. Re-importing the same clinic, condition and period replaces the count. Max 5 MB / 50 000 rows. A template CSV is downloadable from the dashboard. |
+| D47 | Dashboard stack | Vite 8, React 19, TypeScript 5.9, React Router 7, TanStack Query 5, Tailwind CSS 4, react-leaflet 5 + leaflet.heat, Recharts 3, i18next. TypeScript 7 and React Router 8 were not used: both were too new for the libraries above at the time. Tailwind 4 is configured in CSS (`@theme` in `src/index.css`), so there is no `tailwind.config.ts`. |
+| D48 | Dashboard sign-in | Tokens are kept in `sessionStorage` (gone when the tab closes; suits shared office computers). Reporter and verifier accounts are refused at sign-in and the session the API issued is revoked at once. |
+| D49 | Dashboard visual identity | Same teal as the mobile app; amber is reserved for health signals so it always means "look here". Public Sans, self-hosted (no third-party font requests). Every status colour comes with a word. |
+| D50 | Administration safeguards | An administrator cannot deactivate themselves or remove their own administrator role. A role cannot be removed while it is in use in a way that would break records (409 with an explanation). Deactivating a user or resetting their password revokes all their sessions. |
+| D51 | Settings | Only known keys can be changed, each with a validation rule and a plain message. Missing default settings are restored automatically (a `TRUNCATE … CASCADE` on users used to remove them during `seed --reset`). |
+
+## Sprint 4 decisions (incentives and pilot readiness)
+
+| # | Topic | Decision |
+|---|---|---|
+| D52 | Payout outcomes | Adapters answer COMPLETED, ACCEPTED (M-Pesa took the request; the result comes by callback), FAILED, RETRY (nothing reached the provider) or UNKNOWN (it might have). UNKNOWN is never retried automatically, to rule out paying twice; an administrator checks the M-Pesa portal and retries by hand. |
+| D53 | Retries | RETRY outcomes wait 1, 5, 15, then 60 minutes, up to `PAYOUT_MAX_ATTEMPTS` (5). Accepted M-Pesa requests with no result after `PAYOUT_RESULT_TIMEOUT_HOURS` (24) become FAILED. Due payouts are claimed with `FOR UPDATE SKIP LOCKED`, so two processes never send the same one. |
+| D54 | M-Pesa callbacks | Result and timeout callbacks are public (Safaricom cannot log in) but carry a long random token in the path, compared in constant time. Duplicate and unknown callbacks are acknowledged and ignored. |
+| D55 | Mock payments | The mock provider stays the default. Its references start with `MOCK-`, the payout is marked as a test payment, and the dashboard and app show a **Test** badge. Numbers ending in 0000 simulate a failure so the retry path can be tried. |
+| D56 | Periodic jobs in production | In development the API runs the jobs itself. In production the API runs 4 workers with jobs off, and one separate `jobs` container runs `scripts/run_jobs.py`, so a notification is never retried by two processes at once. |
+| D57 | Payout consent in the app | Reporters switch rewards on or off and change the M-Pesa number in the Account tab (`PATCH /auth/me`). Withdrawing consent deletes the payout number. |
+| D58 | Language follows the account | Changing the app language also saves it to the account (best effort when offline), so push and SMS messages arrive in the same language. |
+| D59 | Database connections | 5 + 10 connections per worker (60 for 4 workers, under PostgreSQL's 100), waiting up to 10 s for a free one. An overloaded or unreachable database answers 503 with `Retry-After`, not 500. Found by the load test. |
+| D60 | Deployment | One server with Docker Compose: PostGIS, a one-off `migrate` container, `api`, `jobs`, and Caddy (automatic HTTPS, serves the built dashboard, security headers including a Content-Security-Policy). Photos on a Docker volume, or S3-compatible storage with `STORAGE_BACKEND=s3`. |
+
+## Deviations from the folder structure in the approved plan
+
+| Plan | As built | Why |
+|---|---|---|
+| `mobile/app/` with `(auth)`, `(reporter)`, `(verifier)` groups | `mobile/src/app/` with `(tabs)` and role-aware tabs | Expo Router supports `src/app`, keeping all app code under `src/` (D29). One set of tabs adapts to the user's roles, because one person can be reporter and verifier (D1). |
+| `mobile/src/store/` | `mobile/src/auth/` (`AuthContext`, `tokenStore`) | Auth and session state is the only global state; the name says what it holds. |
+| `mobile/__tests__/` | `__tests__` folders next to the code they test | Jest's convention; tests are found and moved with their code. |
+| `backend/tests/{unit,integration,db}` | same, plus `tests/load/` | Load test added in Sprint 4. (Sprints 1–2 used `tests/api/`; renamed to `tests/integration/` in Sprint 3 to match the plan.) |
+| `integrations/push/expo_push.py` | `integrations/push/expo.py` | Shorter; the folder already says "push". |
+| `dashboard/tailwind.config.ts` | none; theme in `src/index.css` | Tailwind 4 is configured in CSS (D47). |
+| — | `dashboard/src/lib/` | Formatting and colour helpers shared by several pages. |
+| — | `docs/decisions.md`, `deployment.md`, `testing.md`, `user-guide.md`, `changelog.md` | Needed for pilot readiness and for the per-sprint file lists you asked for. |
+| — | `backend/Dockerfile`, `infra/caddy/`, `docker-compose.prod.yml`, `.env.production.example`, `backend/scripts/run_jobs.py` | Deployment (Sprint 4). |
