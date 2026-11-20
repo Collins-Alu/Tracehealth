@@ -1,0 +1,52 @@
+{
+  "expo": {
+    "name": "TraceHealth",
+    "slug": "tracehealth",
+    "scheme": "tracehealth",
+    "version": "0.2.0",
+    "orientation": "portrait",
+    "icon": "./assets/icon.png",
+    "userInterfaceStyle": "light",
+    "ios": {
+      "supportsTablet": true,
+      "bundleIdentifier": "org.tracehealth.app"
+    },
+    "android": {
+      "package": "org.tracehealth.app",
+      "adaptiveIcon": {
+        "backgroundColor": "#E3F1EE",
+        "foregroundImage": "./assets/android-icon-foreground.png",
+        "backgroundImage": "./assets/android-icon-background.png",
+        "monochromeImage": "./assets/android-icon-monochrome.png"
+      },
+      "permissions": [
+        "android.permission.CAMERA",
+        "android.permission.ACCESS_FINE_LOCATION",
+        "android.permission.ACCESS_COARSE_LOCATION"
+      ],
+      "predictiveBackGestureEnabled": false
+    },
+    "web": {
+      "favicon": "./assets/favicon.png"
+    },
+    "plugins": [
+      "expo-router",
+      "expo-secure-store",
+      "expo-sqlite",
+      "expo-localization",
+      [
+        "expo-image-picker",
+        {
+          "cameraPermission": "TraceHealth uses the camera to photograph pollution you report.",
+          "photosPermission": "TraceHealth lets you choose an existing photo of pollution to report."
+        }
+      ],
+      [
+        "expo-location",
+        {
+          "locationWhenInUsePermission": "TraceHealth records where pollution was seen so verifiers and health officials can find it."
+        }
+      ]
+    ]
+  }
+}
