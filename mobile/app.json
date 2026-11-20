@@ -9,7 +9,8 @@
     "userInterfaceStyle": "light",
     "ios": {
       "supportsTablet": true,
-      "bundleIdentifier": "org.tracehealth.app"
+      "bundleIdentifier": "org.tracehealth.app",
+      "infoPlist": {}
     },
     "android": {
       "package": "org.tracehealth.app",
@@ -54,6 +55,17 @@
           "locationWhenInUsePermission": "TraceHealth records where pollution was seen so verifiers and health officials can find it."
         }
       ]
-    ]
+    ],
+    "extra": {
+      "router": {
+        "asyncRoutes": {
+          "web": true
+        }
+      },
+      "eas": {
+        "projectId": "ed6037bf-d5ab-41c7-817d-6176797f6b90"
+      }
+    },
+    "owner": "coll7in"
   }
 }

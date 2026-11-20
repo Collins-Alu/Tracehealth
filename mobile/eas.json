@@ -17,7 +17,7 @@
         "buildType": "apk"
       },
       "env": {
-        "EXPO_PUBLIC_API_URL": "https://tracehealth-api.onrender.com"
+        "EXPO_PUBLIC_API_URL": "https://tracehealth-api-4msu.onrender.com"
       }
     },
     "production": {}
