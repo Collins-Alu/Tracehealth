@@ -16,6 +16,7 @@ import { AppState } from 'react-native';
 import { reportsApi } from '@/api/reports';
 import type { PollutionCategory } from '@/api/types';
 import { useAuth } from '@/auth/AuthContext';
+import { API_URL } from '@/config';
 
 import { deletePhoto, persistPhoto } from './photoStore';
 import { openQueueStore } from './sqliteQueueStore';
@@ -23,6 +24,17 @@ import { SyncEngine } from './syncEngine';
 import type { QueuedReport, QueueStore } from './types';
 
 const PERIODIC_SYNC_MS = 30_000;
+
+// "Online" means the TraceHealth API answers, not that Google is reachable.
+// Android's own check (native reachability) can report a working Wi-Fi as
+// offline, so NetInfo is told to GET our /health endpoint instead.
+NetInfo.configure({
+  reachabilityUrl: `${API_URL}/health`,
+  reachabilityMethod: 'GET',
+  reachabilityTest: async (response) => response.status === 200,
+  reachabilityShortTimeout: 5_000,
+  useNativeReachability: false,
+});
 
 export interface ReportDraft {
   photoUri: string;

@@ -4,6 +4,23 @@ What each sprint delivered and which files it added or changed. File lists are
 paths from the repository root. "Changed" means a file from an earlier sprint
 that was edited.
 
+## Fix: reports stuck as "offline" on Android (Expo SDK 58)
+
+Found while testing on a real phone. Two separate causes, both made a report
+wait in the phone's queue forever, labelled "offline":
+
+- **Photo upload rejected on the phone.** Expo SDK 58's `fetch` no longer
+  accepts React Native's `{ uri, name, type }` form-data object
+  ("Unsupported FormDataPart implementation"), so every upload failed before
+  reaching the server. The photo is now attached as an `expo-file-system`
+  `File` (`mobile/src/api/reports.ts`). The unit tests mock `fetch`, which is
+  why they did not catch it.
+- **Online check.** Android's native reachability check reported a working
+  Wi-Fi as offline. NetInfo now checks the TraceHealth API's own `/health`
+  with a GET request instead (`mobile/src/offline/SyncContext.tsx`).
+- In development builds, network failures now print the real error to the
+  Expo terminal (`mobile/src/api/client.ts`).
+
 ## After Sprint 4: public demo (free hosting)
 
 **Delivered:** deployment to free hosting for assessment (D61–D64): Render
