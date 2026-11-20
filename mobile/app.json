@@ -3,7 +3,7 @@
     "name": "TraceHealth",
     "slug": "tracehealth",
     "scheme": "tracehealth",
-    "version": "0.2.0",
+    "version": "0.3.0",
     "orientation": "portrait",
     "icon": "./assets/icon.png",
     "userInterfaceStyle": "light",
@@ -35,10 +35,17 @@
       "expo-sqlite",
       "expo-localization",
       [
+        "expo-notifications",
+        {
+          "color": "#0F6E64"
+        }
+      ],
+      [
         "expo-image-picker",
         {
           "cameraPermission": "TraceHealth uses the camera to photograph pollution you report.",
-          "photosPermission": "TraceHealth lets you choose an existing photo of pollution to report."
+          "photosPermission": "TraceHealth lets you choose an existing photo of pollution to report.",
+          "microphonePermission": false
         }
       ],
       [

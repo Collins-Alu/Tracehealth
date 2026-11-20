@@ -17,5 +17,6 @@ export default function Index() {
   }
   if (!user) return <Redirect href="/welcome" />;
   if (user.roles.includes('REPORTER')) return <Redirect href="/home" />;
-  return <Redirect href="/verifier" />;
+  if (user.roles.includes('VERIFIER')) return <Redirect href="/review" />;
+  return <Redirect href="/other-roles" />;
 }

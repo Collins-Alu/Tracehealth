@@ -3,11 +3,10 @@ import { Ionicons } from '@expo/vector-icons';
 import { router } from 'expo-router';
 import React from 'react';
 import { useTranslation } from 'react-i18next';
-import { Alert, Pressable, StyleSheet, Text, View } from 'react-native';
+import { Pressable, StyleSheet, Text, View } from 'react-native';
 
 import { useAuth } from '@/auth/AuthContext';
 import { Button } from '@/components/Button';
-import { LanguageToggle } from '@/components/LanguageToggle';
 import { SafetyNotice } from '@/components/SafetyNotice';
 import { Screen } from '@/components/Screen';
 import { useSync } from '@/offline/SyncContext';
@@ -15,18 +14,10 @@ import { colors, font, radius, spacing } from '@/theme';
 
 export default function Home() {
   const { t } = useTranslation();
-  const { user, logout } = useAuth();
+  const { user } = useAuth();
   const { queue, isOnline, isSyncing, syncNow } = useSync();
   const waiting = queue.filter((q) => q.state !== 'NEEDS_ATTENTION').length;
   const attention = queue.filter((q) => q.state === 'NEEDS_ATTENTION').length;
-
-  function confirmLogout() {
-    const message = waiting + attention > 0 ? t('home.logoutQueuedWarning') : t('home.logoutConfirm');
-    Alert.alert(t('common.logout'), message, [
-      { text: t('common.cancel'), style: 'cancel' },
-      { text: t('common.logout'), style: 'destructive', onPress: () => logout() },
-    ]);
-  }
 
   return (
     <Screen>
@@ -82,11 +73,6 @@ export default function Home() {
           onPress={() => router.push('/reports')}
         />
       ) : null}
-
-      <View style={styles.footer}>
-        <LanguageToggle />
-        <Button title={t('common.logout')} icon="log-out" variant="ghost" onPress={confirmLogout} />
-      </View>
     </Screen>
   );
 }
@@ -113,5 +99,4 @@ const styles = StyleSheet.create({
     borderColor: colors.border,
   },
   syncText: { fontSize: font.body, color: colors.text },
-  footer: { marginTop: spacing.lg, gap: spacing.sm },
 });

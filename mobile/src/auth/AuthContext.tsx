@@ -10,6 +10,7 @@ import React, { createContext, useCallback, useContext, useEffect, useState } fr
 import { authApi } from '@/api/auth';
 import { onSessionExpired } from '@/api/index';
 import type { RegisterInput, User } from '@/api/types';
+import { unregisterFromPush } from '@/notifications/push';
 
 import { tokenStore } from './tokenStore';
 
@@ -65,6 +66,8 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   }, []);
 
   const logout = useCallback(async () => {
+    // Stop this account's push notifications reaching this phone (needs the login still valid)
+    await unregisterFromPush();
     const refreshToken = tokenStore.getRefreshToken();
     if (refreshToken) {
       // Best effort: if offline, the token simply expires on the server later
