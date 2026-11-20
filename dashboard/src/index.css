@@ -1,0 +1,105 @@
+/*
+ * TraceHealth dashboard design tokens.
+ * Same teal identity as the mobile app. Amber is reserved for health SIGNALS,
+ * so it always means "look here". All text colours meet WCAG AA on their
+ * backgrounds.
+ */
+@import 'tailwindcss';
+@import '@fontsource-variable/public-sans';
+@import 'leaflet/dist/leaflet.css';
+
+@theme {
+  --font-sans: 'Public Sans Variable', system-ui, sans-serif;
+
+  --color-ink: #18302c;
+  --color-muted: #4e605b;
+  --color-mist: #eef3f1;
+  --color-paper: #ffffff;
+  --color-line: #d3ddd9;
+  --color-teal: #0f6e64;
+  --color-teal-dark: #0a524a;
+  --color-teal-soft: #e0efeb;
+  --color-signal: #9a4d00;
+  --color-signal-soft: #fff1dc;
+  --color-danger: #b42318;
+  --color-danger-soft: #fdecea;
+  --color-ok: #1e7a3c;
+  --color-ok-soft: #e5f4ea;
+  --color-flag: #6b3fa0;
+  --color-flag-soft: #f1eafa;
+  --color-wait: #33547a;
+  --color-wait-soft: #e7eef7;
+}
+
+@layer base {
+  html {
+    color: var(--color-ink);
+    background: var(--color-mist);
+    font-feature-settings: 'tnum' 1; /* figures line up in tables */
+  }
+  body {
+    @apply font-sans text-[15px] leading-6 antialiased;
+  }
+  :focus-visible {
+    outline: 3px solid var(--color-teal);
+    outline-offset: 2px;
+  }
+  h1 {
+    @apply text-2xl font-semibold tracking-tight;
+  }
+  h2 {
+    @apply text-lg font-semibold;
+  }
+}
+
+/* Custom utilities (Tailwind v4: @utility, so they can be combined with
+   variants and applied inside each other) */
+@utility btn {
+  @apply inline-flex min-h-10 items-center justify-center gap-2 rounded-md px-4 font-medium transition-colors disabled:cursor-not-allowed disabled:opacity-50;
+}
+@utility btn-primary {
+  @apply btn bg-teal text-white hover:bg-teal-dark;
+}
+@utility btn-secondary {
+  @apply btn border border-teal bg-paper text-teal hover:bg-teal-soft;
+}
+@utility btn-danger {
+  @apply btn border border-danger bg-paper text-danger hover:bg-danger-soft;
+}
+@utility btn-quiet {
+  @apply btn px-2 text-teal hover:bg-teal-soft;
+}
+@utility field {
+  @apply block min-h-10 w-full rounded-md border border-line bg-paper px-3 py-2 text-ink placeholder:text-muted focus:border-teal;
+}
+@utility label {
+  @apply mb-1 block text-sm font-medium text-ink;
+}
+@utility panel {
+  @apply rounded-lg border border-line bg-paper;
+}
+
+@layer components {
+  .table {
+    @apply w-full border-collapse text-left text-sm;
+  }
+  .table th {
+    @apply border-b border-line px-3 py-2 font-medium text-muted;
+  }
+  .table td {
+    @apply border-b border-line px-3 py-2 align-top;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  * {
+    transition: none !important;
+    animation: none !important;
+  }
+}
+
+/* Leaflet controls sit above the page but below dialogs */
+.leaflet-container {
+  font-family: var(--font-sans);
+  z-index: 0;
+}
