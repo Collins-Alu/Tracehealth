@@ -20,7 +20,8 @@
   [headers.values]
     X-Content-Type-Options = "nosniff"
     X-Frame-Options = "DENY"
-    Referrer-Policy = "no-referrer"
+    # OpenStreetMap requires a Referer on tile requests (tile usage policy)
+    Referrer-Policy = "strict-origin-when-cross-origin"
     Permissions-Policy = "camera=(), microphone=(), geolocation=()"
 
 [[headers]]

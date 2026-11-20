@@ -64,7 +64,7 @@ export function MapPage() {
         <MapContainer center={NAIROBI} zoom={12} className="h-full w-full" scrollWheelZoom>
           <TileLayer
             attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
-            url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
+            url="https://tile.openstreetmap.org/{z}/{x}/{y}.png"
           />
           {points.data ? <FitTo points={points.data} /> : null}
           {mode === 'markers'
