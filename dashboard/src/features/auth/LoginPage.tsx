@@ -1,4 +1,4 @@
-import { type FormEvent, useState } from 'react';
+import { type FormEvent, useEffect, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { Navigate } from 'react-router';
 
@@ -13,6 +13,14 @@ export function LoginPage() {
   const [password, setPassword] = useState('');
   const [error, setError] = useState<string | null>(null);
   const [busy, setBusy] = useState(false);
+  const [slow, setSlow] = useState(false);
+
+  // A sleeping demo server can take up to a minute to answer: say so
+  useEffect(() => {
+    if (!busy) return setSlow(false);
+    const timer = setTimeout(() => setSlow(true), 4000);
+    return () => clearTimeout(timer);
+  }, [busy]);
 
   if (user) return <Navigate to="/" replace />;
 
@@ -50,6 +58,11 @@ export function LoginPage() {
           {error ? (
             <p id="login-error" role="alert" className="rounded-md bg-danger-soft px-3 py-2 text-danger">
               {error}
+            </p>
+          ) : null}
+          {slow ? (
+            <p role="status" className="text-sm text-muted">
+              {t('login.waking')}
             </p>
           ) : null}
           <button className="btn-primary w-full" disabled={busy}>

@@ -62,7 +62,8 @@
     "submit": "Sign in",
     "signingIn": "Signing in…",
     "noAccess": "This account is for the mobile app. The dashboard is for agency staff and administrators.",
-    "intro": "For county health and environment teams. Reports appear here only after a trained verifier has confirmed them."
+    "intro": "For county health and environment teams. Reports appear here only after a trained verifier has confirmed them.",
+    "waking": "The server is starting up. The first sign-in can take up to a minute."
   },
   "categories": {
     "OPEN_BURNING": "Open burning",
