@@ -11,7 +11,7 @@ from functools import lru_cache
 from pathlib import Path
 from typing import Literal
 
-from pydantic import Field
+from pydantic import Field, field_validator
 from pydantic_settings import BaseSettings, SettingsConfigDict
 
 # backend/app/core/config.py -> parents[3] is the repository root
@@ -30,10 +30,22 @@ class Settings(BaseSettings):
 
     APP_NAME: str = "TraceHealth API"
     APP_VERSION: str = "0.1.0"
-    ENVIRONMENT: str = "development"  # development | test | production
+    ENVIRONMENT: str = "development"  # development | test | demo | production
 
     DATABASE_URL: str
     TEST_DATABASE_URL: str | None = None
+
+    @field_validator("DATABASE_URL", "TEST_DATABASE_URL")
+    @classmethod
+    def _use_psycopg_driver(cls, v: str | None) -> str | None:
+        # Hosting providers (Neon, Render, Heroku-style) give "postgres://" or
+        # "postgresql://" URLs; SQLAlchemy needs the psycopg 3 driver named.
+        if v and v.startswith("postgres://"):
+            v = "postgresql://" + v[len("postgres://") :]
+        if v and v.startswith("postgresql://"):
+            v = "postgresql+psycopg://" + v[len("postgresql://") :]
+        return v
+
     # Per API worker process. Keep workers x (pool + overflow) below the
     # database's max_connections (PostgreSQL default 100), leaving room for
     # migrations and admin tools: 4 workers x 15 = 60.
@@ -112,7 +124,7 @@ class Settings(BaseSettings):
     JOBS_INTERVAL_SECONDS: int = 60
 
     # --- Photo storage (D6) ---------------------------------------------
-    STORAGE_BACKEND: Literal["local", "s3"] = "local"
+    STORAGE_BACKEND: Literal["local", "s3", "database"] = "local"
     S3_BUCKET: str | None = None
     S3_ENDPOINT_URL: str | None = None  # e.g. Cloudflare R2 or MinIO; empty for AWS
     S3_REGION: str | None = None

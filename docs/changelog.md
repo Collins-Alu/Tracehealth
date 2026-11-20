@@ -4,6 +4,28 @@ What each sprint delivered and which files it added or changed. File lists are
 paths from the repository root. "Changed" means a file from an earlier sprint
 that was edited.
 
+## After Sprint 4: public demo (free hosting)
+
+**Delivered:** deployment to free hosting for assessment (D61–D64): Render
+blueprint, Netlify config, Android APK build profile, photos stored in the
+database on free hosting (migration 0004), demo data loaded on first start,
+server wake-up on open, step-by-step `docs/hosting-guide.md`, README with
+live links, demo accounts and APK install steps, and CI that runs on pull
+requests and on `main`.
+
+**Added:** `render.yaml`, `netlify.toml`, `backend/scripts/start.sh`,
+`backend/app/models/stored_photo.py`, `backend/app/storage/database.py`,
+`backend/alembic/versions/0004_stored_photos.py`,
+`backend/tests/db/test_database_storage.py`, `docs/hosting-guide.md`
+
+**Changed:** `README.md`, `backend/Dockerfile`, `backend/app/core/config.py`,
+`backend/app/models/__init__.py`, `backend/app/storage/__init__.py`,
+`backend/scripts/seed.py`, `dashboard/src/main.tsx`,
+`dashboard/src/features/auth/LoginPage.tsx`, `dashboard/src/i18n/en.json`,
+`dashboard/src/i18n/sw.json`, `mobile/src/app/_layout.tsx`, `mobile/app.json`,
+`mobile/eas.json`, `.github/workflows/ci.yml`, `docs/decisions.md`,
+`docs/changelog.md`
+
 ## Sprint 4: incentives and pilot readiness
 
 **Delivered**

@@ -107,3 +107,12 @@ deliveries left PENDING for more than two minutes.
 | — | `dashboard/src/lib/` | Formatting and colour helpers shared by several pages. |
 | — | `docs/decisions.md`, `deployment.md`, `testing.md`, `user-guide.md`, `changelog.md` | Needed for pilot readiness and for the per-sprint file lists you asked for. |
 | — | `backend/Dockerfile`, `infra/caddy/`, `docker-compose.prod.yml`, `.env.production.example`, `backend/scripts/run_jobs.py` | Deployment (Sprint 4). |
+
+## After Sprint 4: public demo for assessment
+
+| # | Topic | Decision |
+|---|---|---|
+| D61 | Free public demo | Render (API, Docker, free plan, 1 worker, in-process jobs), Neon (PostgreSQL + PostGIS), Netlify (dashboard), APK from Expo EAS on GitHub Releases. Configured by `render.yaml`, `netlify.toml` and `mobile/eas.json`; steps in `hosting-guide.md`. Everything stays mock: no real money, SMS or push. |
+| D62 | Photos in the database for the demo | Render's free disk is wiped on every restart, so `STORAGE_BACKEND=database` keeps photos in a `stored_photos` table (migration 0004). Fine for demo volumes; local disk or S3 stay the choices for a real pilot. |
+| D63 | Demo data on start-up | `ENVIRONMENT=demo` with `SEED_DEMO_DATA=true` loads the synthetic seed once, only into an empty database (`seed --if-empty`), because free Render services have no shell. Never used with real users. |
+| D64 | Waking a sleeping server | The dashboard and app call `/health` as soon as they open, and the sign-in page says when the server is still starting. |

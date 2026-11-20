@@ -61,6 +61,7 @@ from app.services import linkage_engine, photo_storage, setting_service
 
 # Tables wiped by --reset (settings are restored to defaults afterwards)
 APP_TABLES = [
+    "stored_photos",
     "health_linkage_evidence",
     "health_linkages",
     "payouts",
@@ -370,6 +371,11 @@ def seed(db: Session) -> dict:
 def main() -> int:
     parser = argparse.ArgumentParser(description="Load synthetic development data.")
     parser.add_argument("--reset", action="store_true", help="wipe app data before seeding")
+    parser.add_argument(
+        "--if-empty",
+        action="store_true",
+        help="seed only when there are no users yet; otherwise do nothing (used on demo start-up)",
+    )
     args = parser.parse_args()
 
     settings = get_settings()
@@ -384,6 +390,9 @@ def main() -> int:
             # updated_by), so put the approved defaults back
             setting_service.ensure_defaults(db)
         elif db.scalar(select(func.count()).select_from(User)):
+            if args.if_empty:
+                print("Database already has data; demo seed skipped.")
+                return 0
             print("Database already has users. Run with --reset to wipe and re-seed.")
             return 1
         counts = seed(db)

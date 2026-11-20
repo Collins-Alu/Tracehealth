@@ -62,7 +62,8 @@
     "submit": "Ingia",
     "signingIn": "Inaingia…",
     "noAccess": "Akaunti hii ni ya programu ya simu. Dashibodi ni ya maafisa wa mashirika na wasimamizi.",
-    "intro": "Kwa timu za afya na mazingira za kaunti. Ripoti huonekana hapa baada tu ya mkaguzi aliyefunzwa kuzithibitisha."
+    "intro": "Kwa timu za afya na mazingira za kaunti. Ripoti huonekana hapa baada tu ya mkaguzi aliyefunzwa kuzithibitisha.",
+    "waking": "Seva inawaka. Kuingia mara ya kwanza kunaweza kuchukua hadi dakika moja."
   },
   "categories": {
     "OPEN_BURNING": "Uchomaji wa taka",

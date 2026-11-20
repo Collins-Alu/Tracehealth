@@ -1,7 +1,8 @@
-"""Choose photo storage with STORAGE_BACKEND (local | s3). See .env.example."""
+"""Choose photo storage with STORAGE_BACKEND (local | s3 | database). See .env.example."""
 
 from app.core.config import get_settings
 from app.storage.base import PhotoStorage
+from app.storage.database import DatabasePhotoStorage
 from app.storage.local import LocalPhotoStorage
 from app.storage.s3_compatible import S3PhotoStorage
 
@@ -23,6 +24,10 @@ def get_storage() -> PhotoStorage:
                 aws_secret_access_key=settings.S3_SECRET_ACCESS_KEY,
             )
         return _s3
+    if settings.STORAGE_BACKEND == "database":
+        from app.db.session import SessionLocal
+
+        return DatabasePhotoStorage(SessionLocal)
     # Read UPLOAD_DIR each time so tests can point it at a temporary folder
     return LocalPhotoStorage(settings.UPLOAD_DIR)
 

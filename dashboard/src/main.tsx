@@ -7,10 +7,14 @@ import { StrictMode } from 'react';
 import { createRoot } from 'react-dom/client';
 import { BrowserRouter } from 'react-router';
 
-import { ApiError } from '@/api/client';
+import { API_URL, ApiError } from '@/api/client';
 import { AuthProvider } from '@/auth/AuthContext';
 
 import { App } from './App';
+
+// Wake the API early: free hosting puts it to sleep when idle, and it takes
+// up to a minute to start. By the time someone has typed their password it is up.
+fetch(`${API_URL}/health`).catch(() => undefined);
 
 const queryClient = new QueryClient({
   defaultOptions: {
