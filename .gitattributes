@@ -1,0 +1,4 @@
+# Keep consistent line endings across Windows, macOS and Linux
+* text=auto
+*.sh text eol=lf
+*.sql text eol=lf
