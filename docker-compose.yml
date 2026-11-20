@@ -1,0 +1,28 @@
+# Local development services. Start with:  docker compose up -d
+# Values come from the .env file in this folder.
+services:
+  db:
+    image: postgis/postgis:16-3.4
+    # Apple Silicon Macs: if Docker says "no matching manifest for linux/arm64",
+    # uncomment the next line (runs the image through emulation).
+    # platform: linux/amd64
+    container_name: tracehealth-db
+    restart: unless-stopped
+    environment:
+      POSTGRES_USER: ${POSTGRES_USER}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
+      POSTGRES_DB: ${POSTGRES_DB}
+    ports:
+      - "${POSTGRES_PORT:-5433}:5432"
+    volumes:
+      - tracehealth_pgdata:/var/lib/postgresql/data
+      # Creates the separate test database the first time the volume is initialised
+      - ./infra/postgres/init/20-create-test-db.sql:/docker-entrypoint-initdb.d/20-create-test-db.sql:ro
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER} -d ${POSTGRES_DB}"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+
+volumes:
+  tracehealth_pgdata:
