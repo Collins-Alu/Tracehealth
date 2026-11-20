@@ -5,23 +5,26 @@ environmental agencies can prioritise cleanup and advisories by health impact.
 
 Built from the *TraceHealth Proposal and SRS* (Collins Gathungu, ALU).
 
-> **Status: Sprint 2 complete.** Reporting with offline sync (Sprint 1) plus
-> verification: verifier review screens with zone filter, confirm / reject /
-> flag with reasons, second review of flagged reports, audit log, and
-> notifications (in-app inbox, push, SMS fallback). Health analytics and the
-> web dashboard come in Sprint 3; payouts are sent in Sprint 4.
+> **Status: all five sprints complete (0–4).** Mobile reporting with offline
+> sync, verification, clinic data import, health linkage, the web dashboard,
+> incentive payouts (mock by default, M-Pesa Daraja sandbox-ready), tests at
+> every level and deployment files. See `docs/changelog.md` for what each
+> sprint added.
 
 ## Repository layout
 
 ```
 tracehealth/
-├── backend/            FastAPI API, SQLAlchemy models, Alembic migrations, tests
-├── dashboard/          React web dashboard            (created in Sprint 3)
-├── mobile/             React Native / Expo app (Expo SDK 58)
-├── docs/               Decisions, methods, traceability matrix
-├── infra/              Docker support files
-├── docker-compose.yml  Local PostgreSQL + PostGIS
-└── .env.example        Template for your local .env (never commit .env)
+├── backend/                 FastAPI API, models, Alembic migrations, tests, Dockerfile
+├── dashboard/               React + TypeScript web dashboard, Vitest and Playwright tests
+├── mobile/                  React Native / Expo app (Expo SDK 58)
+├── docs/                    Architecture, method, API, data protection, deployment,
+│                            testing, user guide, UML, decisions, traceability, changelog
+├── infra/                   PostgreSQL init script, Caddy (HTTPS + dashboard)
+├── docker-compose.yml       Local PostgreSQL + PostGIS
+├── docker-compose.prod.yml  Production stack (see docs/deployment.md)
+├── .env.example             Template for your local .env (never commit .env)
+└── .env.production.example  Template for the server
 ```
 
 ## Prerequisites
@@ -32,7 +35,7 @@ tracehealth/
 | Python | 3.12 | `python --version` (Windows) / `python3 --version` |
 | Docker Desktop | any recent | `docker --version` and `docker compose version` |
 | VS Code | any recent | recommended extensions are suggested on first open |
-| Node.js | 22 LTS | `node --version` (for the mobile app) |
+| Node.js | 22 LTS | `node --version` (mobile app and dashboard) |
 | Expo Go app | SDK 58 | install from the Play Store on your Android phone |
 
 ## First-time setup
@@ -86,6 +89,27 @@ Development logins after `python -m scripts.seed` (password `ChangeMe123!`):
 | `verifier1@example.org` | Verifier (Dandora zone) |
 | `agency@example.org` | Agency staff |
 | `admin@example.org` | Administrator |
+
+## Web dashboard
+
+```bash
+cd dashboard
+npm install
+cp .env.example .env            # VITE_API_URL=http://localhost:8000 (the default)
+npm run dev                     # http://localhost:5173
+```
+
+Sign in as `admin@example.org` or `agency@example.org` (password `ChangeMe123!`
+after seeding). Reporter and verifier accounts use the mobile app instead.
+
+Dashboard checks:
+
+```bash
+npx tsc -b           # typecheck
+npx vitest run       # component tests
+npm run build        # production build into dist/
+npm run e2e          # end-to-end in Google Chrome (API must be running with seed data)
+```
 
 ## Mobile app
 
@@ -146,6 +170,24 @@ ruff check . && ruff format --check .     # code style
 The tests rebuild `tracehealth_test` from the migrations on every run, so they
 always check the real schema. Your development database is never touched.
 
+## End-to-end and load tests
+
+See `docs/testing.md`. In short: start the API with seed data, then
+`cd dashboard && npm run e2e` (Chrome) or `npm run e2e:all` (Chrome + Edge).
+The load test uses Locust: `pip install -r backend/requirements-load.txt`.
+
+## Payouts
+
+`PAYOUT_PROVIDER=MOCK` (default) pays nobody: payouts get a `MOCK-` reference
+and a **Test** badge. Phone numbers ending in `0000` simulate a failed payment.
+To try the M-Pesa Daraja sandbox, follow `docs/deployment.md` §8.
+
+## Deployment
+
+`docs/deployment.md` covers a single-server deployment with Docker Compose,
+HTTPS via Caddy, backups, the mobile release build and switching on real
+push, SMS and M-Pesa.
+
 ## Database migrations
 
 ```bash
@@ -177,5 +219,18 @@ alembic check                                  # confirm models and DB agree
 - Health linkages are statistical associations, not proof that pollution caused illness.
 - Secrets live only in `.env` / environment variables.
 
-See `docs/decisions.md` for the approved design decisions and
-`docs/traceability-matrix.md` for SRS requirement coverage.
+## Documentation
+
+| Document | What it covers |
+|---|---|
+| `docs/architecture.md` | Components, layers, main flows |
+| `docs/health-linkage-method.md` | The statistical method in plain language, and its limits |
+| `docs/api.md` | Authentication, roles, conventions, every endpoint (live: `/docs`) |
+| `docs/data-protection.md` | What is collected, who sees what, safeguards, rights |
+| `docs/deployment.md` | Server setup, backups, providers, pre-pilot checklist |
+| `docs/testing.md` | Test levels, E2E, load-test results |
+| `docs/user-guide.md` | Guides for reporters, verifiers, agency staff, administrators |
+| `docs/uml/` | As-built class, sequence (B.3–B.6) and state diagrams |
+| `docs/decisions.md` | Design decisions D1–D60 and deviations from the planned structure |
+| `docs/traceability-matrix.md` | Each SRS requirement → code → tests |
+| `docs/changelog.md` | What each sprint delivered, with its files |
