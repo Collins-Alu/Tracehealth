@@ -151,14 +151,95 @@
     "discardConfirm": "Futa ripoti hii kwenye simu yako? Huwezi kurudisha.",
     "notFound": "Ripoti hii haikupatikana."
   },
-  "verifier": {
-    "title": "Akaunti ya mkaguzi",
-    "text": "Kukagua ripoti kutapatikana kwenye toleo lijalo la programu. Bado unaweza kutoka hapa chini."
-  },
   "errors": {
     "network": "Hakuna mtandao. Tafadhali angalia intaneti yako kisha ujaribu tena.",
     "server": "Kuna hitilafu upande wetu. Tafadhali jaribu tena baada ya muda mfupi.",
     "sessionExpired": "Tafadhali ingia tena.",
     "generic": "Kuna hitilafu. Tafadhali jaribu tena."
+  },
+  "tabs": {
+    "home": "Ripoti",
+    "reports": "Ripoti zangu",
+    "review": "Kagua",
+    "inbox": "Ujumbe",
+    "account": "Akaunti"
+  },
+  "review": {
+    "title": "Kagua ripoti",
+    "detailTitle": "Kagua ripoti",
+    "pending": "Zinasubiri",
+    "flagged": "Zilizowekwa alama",
+    "myZone": "Eneo langu",
+    "allZones": "Maeneo yote",
+    "unassigned": "Bila eneo",
+    "count_one": "Ripoti {{count}}",
+    "count_other": "Ripoti {{count}}",
+    "empty": "Hakuna ripoti zinazosubiri kukaguliwa hapa.",
+    "emptyFlagged": "Hakuna ripoti zilizowekwa alama zinazohitaji ukaguzi wa pili.",
+    "flagReason": "Imewekwa alama kwa sababu",
+    "openMap": "Fungua kwenye ramani",
+    "nearbyTitle": "Ripoti zilizo karibu",
+    "nearbyNone": "Hakuna ripoti nyingine ndani ya mita 250 katika wiki hiyo.",
+    "nearbyItem": "Mita {{distance}} · {{date}}",
+    "confirm": "Thibitisha ripoti",
+    "reject": "Kataa ripoti",
+    "flag": "Weka alama: huenda ni nakala",
+    "confirmTitle": "Thibitisha ripoti hii?",
+    "confirmText": "Itaonekana kwenye dashibodi ya afya na zawadi ya mtoaji ripoti itaombwa.",
+    "rejectTitle": "Kwa nini unakataa ripoti hii?",
+    "flagTitle": "Kwa nini unaweka alama kwenye ripoti hii?",
+    "reasonHint": "Mtoaji ripoti ataona sababu hii. Gusa moja au andika yako.",
+    "reasonLabel": "Sababu",
+    "needReason": "Tafadhali toa sababu (angalau herufi 3).",
+    "submitReject": "Kataa ripoti",
+    "submitFlag": "Weka alama",
+    "decided": {
+      "VERIFIED": "Ripoti imethibitishwa",
+      "REJECTED": "Ripoti imekataliwa",
+      "FLAGGED": "Ripoti imewekwa alama kwa ukaguzi wa pili"
+    },
+    "payoutRequested": "Zawadi ya mtoaji ripoti imeombwa.",
+    "payoutSkipped": "Hakuna zawadi iliyoombwa: mtoaji ripoti hajakubali malipo ya pesa za simu.",
+    "offlineDecision": "Hakuna mtandao. Uamuzi wako HAUKUHIFADHIWA. Tafadhali jaribu tena ukiwa na mtandao.",
+    "cannotDecide": {
+      "OWN_REPORT": "Wewe ndiye uliyetuma ripoti hii, kwa hiyo mkaguzi mwingine lazima aikague.",
+      "FLAGGED_BY_YOU": "Wewe ndiye uliyeweka alama kwenye ripoti hii, kwa hiyo mkaguzi mwingine lazima afanye uamuzi wa mwisho.",
+      "ALREADY_DECIDED": "Ripoti hii tayari ina uamuzi wa mwisho."
+    },
+    "reasons": {
+      "unclear": "Picha haionekani vizuri",
+      "notPollution": "Si uchafuzi",
+      "wrongLocation": "Mahali hapalingani na picha",
+      "wrongCategory": "Picha hailingani na aina",
+      "duplicate": "Huenda ni nakala ya ripoti iliyo karibu",
+      "secondOpinion": "Inahitaji maoni ya mkaguzi mwingine"
+    }
+  },
+  "inbox": {
+    "title": "Ujumbe",
+    "empty": "Bado hakuna ujumbe.",
+    "markAllRead": "Weka zote kuwa zimesomwa",
+    "loadFailed": "Hatukuweza kupakia ujumbe.",
+    "unread": "Haujasomwa"
+  },
+  "account": {
+    "title": "Akaunti",
+    "phone": "Simu",
+    "roles": "Majukumu",
+    "zone": "Eneo la mkaguzi",
+    "noZone": "Maeneo yote",
+    "roleNames": {
+      "REPORTER": "Mtoaji ripoti",
+      "VERIFIER": "Mkaguzi",
+      "AGENCY_STAFF": "Afisa wa shirika",
+      "ADMINISTRATOR": "Msimamizi"
+    },
+    "pushTitle": "Arifa",
+    "pushOn": "Arifa za simu na ujumbe",
+    "pushInboxOnly": "Ujumbe tu (arifa za simu zinahitaji toleo kamili la programu)"
+  },
+  "otherRoles": {
+    "title": "TraceHealth",
+    "text": "Akaunti hii ni ya dashibodi ya mtandaoni ya TraceHealth. Tafadhali ingia huko kwa kutumia kompyuta."
   }
 }

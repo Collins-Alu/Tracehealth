@@ -151,14 +151,95 @@
     "discardConfirm": "Delete this report from your phone? This cannot be undone.",
     "notFound": "This report could not be found."
   },
-  "verifier": {
-    "title": "Verifier account",
-    "text": "Reviewing reports will be available in the next app update. You can still log out below."
-  },
   "errors": {
     "network": "No connection. Please check your internet and try again.",
     "server": "Something went wrong on our side. Please try again in a moment.",
     "sessionExpired": "Please log in again.",
     "generic": "Something went wrong. Please try again."
+  },
+  "tabs": {
+    "home": "Report",
+    "reports": "My reports",
+    "review": "Review",
+    "inbox": "Inbox",
+    "account": "Account"
+  },
+  "review": {
+    "title": "Review reports",
+    "detailTitle": "Review report",
+    "pending": "Waiting",
+    "flagged": "Flagged",
+    "myZone": "My zone",
+    "allZones": "All zones",
+    "unassigned": "No zone",
+    "count_one": "{{count}} report",
+    "count_other": "{{count}} reports",
+    "empty": "No reports are waiting for review here.",
+    "emptyFlagged": "No flagged reports need a second review.",
+    "flagReason": "Flagged because",
+    "openMap": "Open in map",
+    "nearbyTitle": "Reports close by",
+    "nearbyNone": "No other reports within 250 m in the same week.",
+    "nearbyItem": "{{distance}} m away · {{date}}",
+    "confirm": "Confirm report",
+    "reject": "Reject report",
+    "flag": "Flag as possible duplicate",
+    "confirmTitle": "Confirm this report?",
+    "confirmText": "It will appear on the health dashboard and the reporter's reward will be requested.",
+    "rejectTitle": "Why are you rejecting this report?",
+    "flagTitle": "Why are you flagging this report?",
+    "reasonHint": "The reporter will see this reason. Tap one or write your own.",
+    "reasonLabel": "Reason",
+    "needReason": "Please give a reason (at least 3 characters).",
+    "submitReject": "Reject report",
+    "submitFlag": "Flag report",
+    "decided": {
+      "VERIFIED": "Report confirmed",
+      "REJECTED": "Report rejected",
+      "FLAGGED": "Report flagged for a second review"
+    },
+    "payoutRequested": "The reporter's reward has been requested.",
+    "payoutSkipped": "No reward requested: the reporter has not agreed to mobile money payments.",
+    "offlineDecision": "No connection. Your decision was NOT saved. Please try again when you are online.",
+    "cannotDecide": {
+      "OWN_REPORT": "You sent this report, so another verifier must review it.",
+      "FLAGGED_BY_YOU": "You flagged this report, so another verifier must make the final decision.",
+      "ALREADY_DECIDED": "This report already has a final decision."
+    },
+    "reasons": {
+      "unclear": "Photo is unclear",
+      "notPollution": "Not pollution",
+      "wrongLocation": "Location does not match the photo",
+      "wrongCategory": "Photo does not match the category",
+      "duplicate": "Possible duplicate of a nearby report",
+      "secondOpinion": "Needs a second opinion"
+    }
+  },
+  "inbox": {
+    "title": "Inbox",
+    "empty": "No notifications yet.",
+    "markAllRead": "Mark all as read",
+    "loadFailed": "Could not load notifications.",
+    "unread": "Unread"
+  },
+  "account": {
+    "title": "Account",
+    "phone": "Phone",
+    "roles": "Roles",
+    "zone": "Verifier zone",
+    "noZone": "All zones",
+    "roleNames": {
+      "REPORTER": "Reporter",
+      "VERIFIER": "Verifier",
+      "AGENCY_STAFF": "Agency staff",
+      "ADMINISTRATOR": "Administrator"
+    },
+    "pushTitle": "Notifications",
+    "pushOn": "Phone alerts and inbox",
+    "pushInboxOnly": "Inbox only (phone alerts need the full app build)"
+  },
+  "otherRoles": {
+    "title": "TraceHealth",
+    "text": "This account is for the TraceHealth web dashboard. Please sign in there from a computer."
   }
 }

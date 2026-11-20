@@ -3,6 +3,7 @@
 import uuid
 from datetime import datetime
 from decimal import Decimal
+from typing import Literal
 
 from pydantic import BaseModel, ConfigDict, Field, field_validator
 
@@ -12,6 +13,7 @@ from app.models.enums import (
     PollutionCategory,
     ReportStatus,
     SyncStatus,
+    VerificationDecision,
 )
 
 
@@ -67,6 +69,9 @@ class PayoutSummary(BaseModel):
     paid_at: datetime | None
 
 
+CannotDecideReason = Literal["OWN_REPORT", "FLAGGED_BY_YOU", "ALREADY_DECIDED"]
+
+
 class ReportOut(BaseModel):
     """A report as shown in the apps.
 
@@ -90,7 +95,14 @@ class ReportOut(BaseModel):
     decision_reason: str | None = Field(
         None, description="Why the report was rejected or flagged, shown to its reporter"
     )
+    zone_code: str | None = Field(None, description="Verifier zone the location falls in")
     payout: PayoutSummary | None = None
+    can_decide: bool = Field(
+        False, description="True when the person asking may verify, reject or flag it now"
+    )
+    cannot_decide_reason: CannotDecideReason | None = Field(
+        None, description="Why can_decide is false, for verifiers (null otherwise)"
+    )
 
 
 class ReportPage(BaseModel):
@@ -106,3 +118,70 @@ class SubmitResult(BaseModel):
         description="True when this exact report (same client_report_id) was received "
         "before; nothing new was stored"
     )
+
+
+# --------------------------------------------------------------------------
+# Verification (Sprint 2)
+# --------------------------------------------------------------------------
+def _clean_reason(v: str | None) -> str | None:
+    v = " ".join((v or "").split())
+    return v or None
+
+
+class VerifyRequest(BaseModel):
+    note: str | None = Field(
+        None, max_length=500, description="Optional, e.g. why a flagged report is genuine"
+    )
+
+    @field_validator("note")
+    @classmethod
+    def _clean_note(cls, v: str | None) -> str | None:
+        return _clean_reason(v)
+
+
+class ReasonRequest(BaseModel):
+    reason: str = Field(max_length=500, description="Required: shown to the reporter")
+
+    @field_validator("reason")
+    @classmethod
+    def _required(cls, v: str) -> str:
+        v = _clean_reason(v)
+        if not v or len(v) < 3:
+            raise ValueError("Please give a reason (at least 3 characters).")
+        return v
+
+
+class VerificationOut(BaseModel):
+    model_config = ConfigDict(from_attributes=True)
+
+    id: uuid.UUID
+    decision: VerificationDecision
+    reason: str | None
+    is_final: bool
+    verified_at: datetime
+
+
+class DecisionResult(BaseModel):
+    report: ReportOut
+    verification: VerificationOut
+    payout_requested: bool = Field(
+        description="True when a PENDING incentive payout was recorded for the reporter"
+    )
+    payout_skipped_reason: str | None = Field(
+        None, description="e.g. no_payout_consent: the reporter has not agreed to payouts"
+    )
+
+
+class NearbyReport(BaseModel):
+    report: ReportOut
+    distance_m: float
+
+
+class ZoneOut(BaseModel):
+    model_config = ConfigDict(from_attributes=True)
+
+    code: str
+    name: str
+    latitude: float
+    longitude: float
+    radius_km: float

@@ -116,7 +116,9 @@ class Verifier(Base):
         UUID(as_uuid=True), ForeignKey("users.id", ondelete="CASCADE"), primary_key=True
     )
     # NULL means the verifier is not restricted to a single zone
-    assigned_zone: Mapped[str | None] = mapped_column(String(100))
+    assigned_zone: Mapped[str | None] = mapped_column(
+        String(40), ForeignKey("zones.code", ondelete="SET NULL", onupdate="CASCADE"), index=True
+    )
 
     user: Mapped[User] = relationship(back_populates="verifier_profile")
 

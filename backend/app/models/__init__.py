@@ -6,6 +6,7 @@ to compare the models with the database.
 from app.models.audit import AuditLog
 from app.models.auth_token import RefreshToken
 from app.models.clinic import ClinicImportBatch, ClinicVisitSummary, Facility
+from app.models.device import DevicePushToken
 from app.models.health_linkage import HealthLinkage, HealthLinkageEvidence
 from app.models.notification import Notification
 from app.models.payout import Payout
@@ -13,6 +14,7 @@ from app.models.report import PollutionReport
 from app.models.setting import SystemSetting
 from app.models.user import Administrator, AgencyStaff, Reporter, User, Verifier
 from app.models.verification import Verification
+from app.models.zone import Zone
 
 __all__ = [
     "Administrator",
@@ -20,6 +22,7 @@ __all__ = [
     "AuditLog",
     "ClinicImportBatch",
     "ClinicVisitSummary",
+    "DevicePushToken",
     "Facility",
     "HealthLinkage",
     "HealthLinkageEvidence",
@@ -32,4 +35,5 @@ __all__ = [
     "User",
     "Verification",
     "Verifier",
+    "Zone",
 ]

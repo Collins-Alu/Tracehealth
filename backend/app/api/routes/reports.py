@@ -8,15 +8,24 @@ GET  /reports/my-reports           the logged-in reporter's reports + payout sta
 GET  /reports/{id}                 one report (permission-checked)
 GET  /reports/{id}/photo           the report photo (permission-checked)
 
-The verifier list endpoints (GET /reports, GET /reports/pending) and the
-verify/reject/flag decisions are added in Sprint 3.
+Verifier lists and decisions live in routes/verification.py (Sprint 2).
 """
 
 import uuid
 from datetime import datetime
 from typing import Annotated
 
-from fastapi import APIRouter, Depends, File, Form, HTTPException, Query, Response, UploadFile
+from fastapi import (
+    APIRouter,
+    BackgroundTasks,
+    Depends,
+    File,
+    Form,
+    HTTPException,
+    Query,
+    Response,
+    UploadFile,
+)
 from fastapi.exceptions import RequestValidationError
 from fastapi.responses import FileResponse
 from pydantic import ValidationError
@@ -24,11 +33,13 @@ from sqlalchemy.orm import Session
 
 from app.core.config import get_settings
 from app.core.deps import Role, get_current_user, require_roles
+from app.core.notifications import get_notification_dispatcher
 from app.db.session import get_db
 from app.models import User
 from app.models.enums import PollutionCategory, ReportStatus
 from app.schemas.report import NewReportFields, ReportFields, ReportOut, ReportPage, SubmitResult
 from app.services import photo_storage, report_service
+from app.services.notification_dispatch import NotificationDispatcher
 from app.services.report_service import ReportError
 
 router = APIRouter(prefix="/reports", tags=["Pollution reports"])
@@ -92,6 +103,8 @@ def _submit(
     photo_bytes: bytes,
     response: Response,
     via_sync: bool,
+    background: BackgroundTasks,
+    dispatcher: NotificationDispatcher,
 ) -> SubmitResult:
     try:
         outcome = report_service.submit_report(
@@ -99,6 +112,8 @@ def _submit(
         )
     except ReportError as exc:
         raise HTTPException(exc.status_code, exc.message) from None
+    # Push alerts to verifiers are sent after the response, so the phone isn't kept waiting
+    background.add_task(dispatcher.dispatch, outcome.delivery_ids)
     response.status_code = 201 if outcome.created else 200
     return SubmitResult(
         report=report_service.report_out(db, user, outcome.report),
@@ -117,11 +132,23 @@ async def submit_report(
     response: Response,
     fields: Annotated[NewReportFields, Depends(new_report_form)],
     photo: Annotated[UploadFile, File(description="JPEG, PNG or WebP photo")],
+    background: BackgroundTasks,
     user: User = Depends(reporter_only),
     db: Session = Depends(get_db),
+    dispatcher: NotificationDispatcher = Depends(get_notification_dispatcher),
 ) -> SubmitResult:
     photo_bytes = await _read_photo(photo)
-    return _submit(db, user, fields.client_report_id, fields, photo_bytes, response, via_sync=False)
+    return _submit(
+        db,
+        user,
+        fields.client_report_id,
+        fields,
+        photo_bytes,
+        response,
+        via_sync=False,
+        background=background,
+        dispatcher=dispatcher,
+    )
 
 
 @router.post(
@@ -136,11 +163,23 @@ async def sync_report(
     response: Response,
     fields: Annotated[ReportFields, Depends(report_form)],
     photo: Annotated[UploadFile, File(description="JPEG, PNG or WebP photo")],
+    background: BackgroundTasks,
     user: User = Depends(reporter_only),
     db: Session = Depends(get_db),
+    dispatcher: NotificationDispatcher = Depends(get_notification_dispatcher),
 ) -> SubmitResult:
     photo_bytes = await _read_photo(photo)
-    return _submit(db, user, client_report_id, fields, photo_bytes, response, via_sync=True)
+    return _submit(
+        db,
+        user,
+        client_report_id,
+        fields,
+        photo_bytes,
+        response,
+        via_sync=True,
+        background=background,
+        dispatcher=dispatcher,
+    )
 
 
 @router.get("/my-reports", response_model=ReportPage, summary="My submitted reports")

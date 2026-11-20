@@ -3,6 +3,7 @@
  *
  *   AuthProvider  - who is logged in (works offline from the cached profile)
  *   SyncProvider  - the offline queue and automatic syncing
+ *   InboxProvider - unread count, push registration, opening tapped notifications
  */
 import { Stack } from 'expo-router';
 import React, { useEffect, useState } from 'react';
@@ -12,6 +13,7 @@ import { SafeAreaProvider } from 'react-native-safe-area-context';
 import { AuthProvider } from '@/auth/AuthContext';
 import '@/i18n';
 import { restoreLanguage } from '@/i18n';
+import { InboxProvider } from '@/notifications/InboxContext';
 import { SyncProvider } from '@/offline/SyncContext';
 import { colors } from '@/theme';
 
@@ -26,7 +28,9 @@ export default function RootLayout() {
     <SafeAreaProvider>
       <AuthProvider>
         <SyncProvider>
-          <AppStack />
+          <InboxProvider>
+            <AppStack />
+          </InboxProvider>
         </SyncProvider>
       </AuthProvider>
     </SafeAreaProvider>
@@ -48,14 +52,15 @@ function AppStack() {
       <Stack.Screen name="welcome" options={{ headerShown: false }} />
       <Stack.Screen name="login" options={{ title: t('auth.loginTitle') }} />
       <Stack.Screen name="register" options={{ title: t('auth.registerTitle') }} />
-      <Stack.Screen name="(reporter)" options={{ headerShown: false }} />
+      <Stack.Screen name="(tabs)" options={{ headerShown: false }} />
       <Stack.Screen name="new-report" options={{ title: t('newReport.title') }} />
       <Stack.Screen
         name="submitted"
         options={{ headerShown: false, gestureEnabled: false }}
       />
       <Stack.Screen name="report/[id]" options={{ title: t('detail.title') }} />
-      <Stack.Screen name="verifier" options={{ title: t('verifier.title') }} />
+      <Stack.Screen name="review/[id]" options={{ title: t('review.detailTitle') }} />
+      <Stack.Screen name="other-roles" options={{ title: t('otherRoles.title') }} />
     </Stack>
   );
 }

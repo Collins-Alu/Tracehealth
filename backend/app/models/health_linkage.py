@@ -3,7 +3,7 @@ HealthLinkage (UML B.2b): a statistical association between one verified
 report and visit counts for one condition at one nearby facility.
 
 The method (documented in docs/health-linkage-method.md and implemented in
-Sprint 4) compares visit rates in a follow-up window after the report with a
+Sprint 3) compares visit rates in a follow-up window after the report with a
 baseline window before it. Results are associations, never proof of
 causation. When there is not enough data, status is INSUFFICIENT_DATA and the
 statistical fields stay empty rather than being invented.

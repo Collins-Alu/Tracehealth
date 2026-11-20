@@ -10,7 +10,7 @@ from app.core.config import get_settings
 from app.core.security import hash_password
 from app.models import AuditLog, RefreshToken, User
 from tests.conftest import auth_headers
-from tests.factories import make_user
+from tests.factories import make_user, make_zone
 
 GOOD = {
     "full_name": "Wanjiru Test",
@@ -102,11 +102,12 @@ def test_deactivated_user_cannot_log_in(client, db):
 def test_me_requires_a_valid_token(client, db):
     assert client.get("/auth/me").status_code == 401
     assert client.get("/auth/me", headers={"Authorization": "Bearer junk"}).status_code == 401
-    user = make_user(db, "VERIFIER")
+    make_zone(db, "ZONE-A")
+    user = make_user(db, "VERIFIER", zone="ZONE-A")
     r = client.get("/auth/me", headers=auth_headers(user))
     assert r.status_code == 200
     assert r.json()["roles"] == ["VERIFIER"]
-    assert r.json()["assigned_zone"] == "Zone A"
+    assert r.json()["assigned_zone"] == "ZONE-A"
 
 
 def test_expired_or_forged_tokens_are_rejected(client, db):

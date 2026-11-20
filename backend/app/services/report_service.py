@@ -9,7 +9,7 @@ client_report_id guarantees this even when two copies arrive at the same time.
 """
 
 import uuid
-from dataclasses import dataclass
+from dataclasses import dataclass, field
 from datetime import UTC, datetime, timedelta
 
 from sqlalchemy import func, select
@@ -19,9 +19,9 @@ from sqlalchemy.orm import Session
 from app.core.config import get_settings
 from app.core.deps import Role
 from app.models import Payout, PollutionReport, User, Verification
-from app.models.enums import PayoutProvider, ReportStatus, SyncStatus
+from app.models.enums import PayoutProvider, ReportStatus, SyncStatus, VerificationDecision
 from app.schemas.report import PayoutSummary, ReportFields, ReportOut, ReportPage
-from app.services import audit_service, notification_service, photo_storage
+from app.services import audit_service, notification_service, photo_storage, zone_service
 
 # Phones' clocks drift; allow a little "future" before calling it an error
 CLOCK_SKEW = timedelta(minutes=10)
@@ -38,6 +38,8 @@ class ReportError(Exception):
 class SubmitOutcome:
     report: PollutionReport
     created: bool
+    # Push notifications to send after the response (see notification_dispatch)
+    delivery_ids: list[uuid.UUID] = field(default_factory=list)
 
 
 def _check_timestamp(captured_at: datetime) -> None:
@@ -101,6 +103,7 @@ def submit_report(
         longitude=fields.longitude,
         category=fields.category,
         description=fields.description,
+        zone_code=zone_service.zone_for_point(db, fields.latitude, fields.longitude),
         captured_at=fields.captured_at,
         sync_status=sync_status,
     )
@@ -124,7 +127,11 @@ def submit_report(
         action="report.submitted",
         entity_type="pollution_report",
         entity_id=report.id,
-        details={"sync_status": sync_status.value, "verifiers_notified": notified},
+        details={
+            "sync_status": sync_status.value,
+            "zone_code": report.zone_code,
+            "verifiers_notified": notified.recipients,
+        },
     )
     try:
         db.commit()
@@ -132,7 +139,7 @@ def submit_report(
         photo_storage.delete_photo(key)
         raise
     db.refresh(report)
-    return SubmitOutcome(report=report, created=True)
+    return SubmitOutcome(report=report, created=True, delivery_ids=notified.delivery_ids)
 
 
 # --------------------------------------------------------------------------
@@ -175,11 +182,42 @@ def _decision_reasons(db: Session, report_ids: list[uuid.UUID]) -> dict[uuid.UUI
     return {report_id: reason for report_id, reason, _ in rows}  # latest wins
 
 
+def _flaggers(db: Session, report_ids: list[uuid.UUID]) -> dict[uuid.UUID, uuid.UUID]:
+    """Who flagged each report (the latest flag)."""
+    if not report_ids:
+        return {}
+    rows = db.execute(
+        select(Verification.report_id, Verification.verifier_id)
+        .where(
+            Verification.report_id.in_(report_ids),
+            Verification.decision == VerificationDecision.FLAGGED,
+        )
+        .order_by(Verification.verified_at)
+    ).all()
+    return {report_id: verifier_id for report_id, verifier_id in rows}
+
+
+def review_status(
+    viewer: User, report: PollutionReport, flagged_by: uuid.UUID | None
+) -> tuple[bool, str | None]:
+    """(can_decide, reason_if_not) for this viewer. Mirrors verification_service rules."""
+    if Role.VERIFIER.value not in viewer.roles:
+        return False, None
+    if report.reporter_id == viewer.id:
+        return False, "OWN_REPORT"
+    if report.status in (ReportStatus.VERIFIED, ReportStatus.REJECTED):
+        return False, "ALREADY_DECIDED"
+    if report.status == ReportStatus.FLAGGED and flagged_by == viewer.id:
+        return False, "FLAGGED_BY_YOU"
+    return True, None
+
+
 def to_out(
     report: PollutionReport,
     viewer: User,
     payout: Payout | None = None,
     reason: str | None = None,
+    flagged_by: uuid.UUID | None = None,
 ) -> ReportOut:
     is_owner = report.reporter_id == viewer.id
     privileged = bool({Role.VERIFIER.value, Role.ADMINISTRATOR.value} & set(viewer.roles))
@@ -204,13 +242,23 @@ def to_out(
         if show_payout
         else None
     )
+    out.can_decide, out.cannot_decide_reason = review_status(viewer, report, flagged_by)
     return out
 
 
+def build_outs(db: Session, viewer: User, reports: list[PollutionReport]) -> list[ReportOut]:
+    """Convert many reports with three batched lookups instead of three per report."""
+    ids = [r.id for r in reports]
+    payouts = _payouts_for(db, ids)
+    reasons = _decision_reasons(db, ids)
+    flaggers = _flaggers(db, ids)
+    return [
+        to_out(r, viewer, payouts.get(r.id), reasons.get(r.id), flaggers.get(r.id)) for r in reports
+    ]
+
+
 def report_out(db: Session, viewer: User, report: PollutionReport) -> ReportOut:
-    payouts = _payouts_for(db, [report.id])
-    reasons = _decision_reasons(db, [report.id])
-    return to_out(report, viewer, payouts.get(report.id), reasons.get(report.id))
+    return build_outs(db, viewer, [report])[0]
 
 
 def list_my_reports(
@@ -227,11 +275,8 @@ def list_my_reports(
         .limit(limit)
         .offset(offset)
     ).all()
-    ids = [r.id for r in reports]
-    payouts = _payouts_for(db, ids)
-    reasons = _decision_reasons(db, ids)
     return ReportPage(
-        items=[to_out(r, reporter, payouts.get(r.id), reasons.get(r.id)) for r in reports],
+        items=build_outs(db, reporter, list(reports)),
         total=total,
         limit=limit,
         offset=offset,

@@ -62,7 +62,59 @@ export interface Report {
   status: ReportStatus;
   sync_status: SyncStatus;
   decision_reason: string | null;
+  zone_code: string | null;
   payout: PayoutSummary | null;
+  /** True when the logged-in verifier may verify, reject or flag this report now. */
+  can_decide: boolean;
+  cannot_decide_reason: CannotDecideReason | null;
+}
+
+export type CannotDecideReason = 'OWN_REPORT' | 'FLAGGED_BY_YOU' | 'ALREADY_DECIDED';
+
+export interface Zone {
+  code: string;
+  name: string;
+  latitude: number;
+  longitude: number;
+  radius_km: number;
+}
+
+export interface NearbyReport {
+  report: Report;
+  distance_m: number;
+}
+
+export type Decision = 'VERIFIED' | 'REJECTED' | 'FLAGGED';
+
+export interface DecisionResult {
+  report: Report;
+  verification: {
+    id: string;
+    decision: Decision;
+    reason: string | null;
+    is_final: boolean;
+    verified_at: string;
+  };
+  payout_requested: boolean;
+  payout_skipped_reason: string | null;
+}
+
+export interface AppNotification {
+  id: string;
+  type: string;
+  title: string;
+  body: string;
+  related_report_id: string | null;
+  created_at: string;
+  read_at: string | null;
+}
+
+export interface NotificationPage {
+  items: AppNotification[];
+  total: number;
+  unread: number;
+  limit: number;
+  offset: number;
 }
 
 export interface ReportPage {
