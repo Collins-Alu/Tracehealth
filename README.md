@@ -18,7 +18,7 @@ Built from the *TraceHealth Proposal and SRS* (Collins Gathungu, ALU).
 | Web dashboard | https://tracehealth-bpqa.netlify.app |
 | API and interactive docs | https://tracehealth-api-4msu.onrender.com/docs |
 | Android app (APK) | https://github.com/Collins-Alu/tracehealth/releases/download/v1.0.0/TraceHealth-1.0.0.apk (GitHub Releases) |
-| SRS document |  |
+| SRS document | https://docs.google.com/document/d/1rQ6zwPqTylFE3gyXi3x4kbrQPHTAssOJMEVDvzc7oAY/edit?usp=sharing |
 
 > The demo uses **synthetic data only** and payouts are **test payments**
 > (no real money). The API runs on a free plan that sleeps when idle: the first
